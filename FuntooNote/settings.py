@@ -20,7 +20,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '02*o#uo$f6#98e54$%ol&kwl*s0e3q(s_gj!u^3!z&hb_siyl&'
+
+from .AppSecret import APP_KEY
+SECRET_KEY = APP_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -72,11 +74,18 @@ WSGI_APPLICATION = 'FuntooNote.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}"""
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'djongo',
+        'NAME': 'FuntooNotes',
     }
 }
 
