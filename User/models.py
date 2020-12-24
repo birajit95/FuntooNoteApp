@@ -1,14 +1,21 @@
 from django.db import models
-from datetime import datetime
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
-class User(models.Model):
-    firstName = models.CharField(max_length=30)
-    lastName = models.CharField(max_length=30)
-    userName = models.CharField(max_length=30)
-    email = models.CharField(max_length=40)
-    password = models.CharField(max_length=100)
-    date = models.DateTimeField(default=datetime.utcnow)
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    bio = models.TextField(max_length=500, blank=True)
+    dob = models.DateField(null=True, blank=True)
 
-    def __str__(self):
-        return f"{self.firstName} {self.lastName}"
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
