@@ -82,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'FuntooNotes',
-        'USER': 'postgres',
-        'PASSWORD': 'birajit123',
+        'USER': os.environ.get('pgdb_username'),
+        'PASSWORD': os.environ.get('pgdb_password'),
         'HOST': 'localhost',
         'PORT': '5432'
     }
