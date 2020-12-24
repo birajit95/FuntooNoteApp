@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'User.apps.UserConfig',
-    'rest_framework_swagger'
+    'rest_framework_swagger',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -76,20 +77,24 @@ WSGI_APPLICATION = 'FuntooNote.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}"""
 
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'FuntooNotes',
+        'USER': 'postgres',
+        'PASSWORD': 'birajit123',
+        'HOST': 'localhost',
+        'PORT': '5432'
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'djongo',
+#         'NAME': 'FuntooNotes',
+#     }
+# }
 
 
 # Password validation
@@ -129,4 +134,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-
