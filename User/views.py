@@ -9,6 +9,7 @@ from .emailVarification import Email
 from django.contrib.auth import authenticate, login
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.contrib.auth.hashers import check_password
 
 
 class UserRegistration(APIView):
@@ -89,7 +90,7 @@ class UserLogin(APIView):
             responseMsg = {'msg': 'You are logged in successfully'}
             return HttpResponse(JSONRenderer().render(responseMsg))
         user = User.objects.get(username=username)
-        if user:
+        if user and check_password(password, user.password):
             jwtToken = JWTAuth.getToken(user.username, user.password)
             current_site = get_current_site(request).domain
             relative_url = 'user/verify-email/'
