@@ -7,12 +7,36 @@ from django.contrib.sites.shortcuts import get_current_site
 from .JWTAuthentication import JWTAuth
 from .emailVarification import Email
 from django.contrib.auth import authenticate, login
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class UserRegistration(APIView):
     def get(self, request):
         return render(request, "userRegistrration.html")
 
+    first_name = openapi.Parameter(
+        'first_name', in_= openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+    last_name = openapi.Parameter(
+        'last_name', in_=openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+    username = openapi.Parameter(
+        'username', in_= openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+    email = openapi.Parameter(
+        'email', in_=openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+    password = openapi.Parameter(
+        'password', in_=openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+
+    @swagger_auto_schema(manual_parameters=[first_name, last_name, username, email, password])
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -28,6 +52,7 @@ class UserRegistration(APIView):
             response = {'msg': "data is created and a confirmation mail is sent to your mail"}
             return HttpResponse(JSONRenderer().render(response))
         return HttpResponse(JSONRenderer().render(serializer.errors))
+
 
 class VerifyEmail(APIView):
     def get(self, request):
@@ -45,6 +70,16 @@ class VerifyEmail(APIView):
 
 
 class UserLogin(APIView):
+    username = openapi.Parameter(
+        'username', in_=openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+    password = openapi.Parameter(
+        'password', in_=openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+
+    @swagger_auto_schema(manual_parameters=[username, password])
     def post(self, request):
         username = request.data['username']
         password = request.data['password']
