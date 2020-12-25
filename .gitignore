@@ -5,3 +5,5 @@ FuntooNote/__pycache__/wsgi.cpython-38.pyc
 envVariable.sh
 AppSecret.py
 FuntooNote/__pycache__/
+migrations
+User/__pycache__/
