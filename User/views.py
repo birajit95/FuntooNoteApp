@@ -11,7 +11,6 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.contrib.auth.hashers import check_password
 
-
 class UserRegistration(APIView):
     def get(self, request):
         return render(request, "userRegistrration.html")
@@ -89,7 +88,10 @@ class UserLogin(APIView):
             login(request, user)
             responseMsg = {'msg': 'You are logged in successfully'}
             return HttpResponse(JSONRenderer().render(responseMsg))
-        user = User.objects.get(username=username)
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            user = None
         if user and check_password(password, user.password):
             jwtToken = JWTAuth.getToken(user.username, user.password)
             current_site = get_current_site(request).domain
