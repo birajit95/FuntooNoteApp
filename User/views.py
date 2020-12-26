@@ -6,10 +6,12 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from .JWTAuthentication import JWTAuth
 from .emailVarification import Email
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.decorators import login_required
+
 
 class UserRegistration(APIView):
     def get(self, request):
@@ -103,3 +105,9 @@ class UserLogin(APIView):
             return HttpResponse(JSONRenderer().render(responseMsg))
         responseMsg = {'msg': 'Bad Credential found'}
         return HttpResponse(JSONRenderer().render(responseMsg))
+
+@login_required(login_url='/user/login/')
+def logoutUser(request):
+    logout(request)
+    responseMsg = {'msg': 'You are logged out successfully'}
+    return HttpResponse(JSONRenderer().render(responseMsg))
