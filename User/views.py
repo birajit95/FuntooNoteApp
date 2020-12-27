@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse
 from rest_framework.views import APIView
-from .serialyzer import UserSerializer
+from .serialyzer import UserSerializer, ResetPasswordSerializer, ForgotPasswordSerializer
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -111,3 +111,54 @@ def logoutUser(request):
     logout(request)
     responseMsg = {'msg': 'You are logged out successfully'}
     return HttpResponse(JSONRenderer().render(responseMsg))
+
+class ForgotPassword(APIView):
+    serializer_class = ForgotPasswordSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            try:
+                user = User.objects.get(email=serializer.data.get('email'))
+            except User.DoesNotExist:
+                responseMsg = {'msg': 'Your Mail id is not registered'}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            jwtToken = JWTAuth.getToken(user.username, user.password)
+            current_site = get_current_site(request).domain
+            relative_url = 'user/reset-password/'+str(user.pk)+"/"+str(jwtToken)
+            email_data = Email.configureResetPasswordMail(jwtToken, user, current_site, relative_url)
+            Email.sendEmail(email_data)
+            responseMsg = {'msg': 'Password reset link is sent to your mail.'}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+        return HttpResponse(JSONRenderer().render(serializer.errors))
+
+class ResetPassword(APIView):
+    def get(self, request, uid, token):
+        response = JWTAuth.verifyToken(jwtToken=token)
+        if not response:
+            responseMsg = {'msg': 'Session for this token is expired!'}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+        responseMsg ={
+            'uid':uid,
+            'token':token
+        }
+        return HttpResponse(JSONRenderer().render(responseMsg))
+
+    def put(self, request, uid, token):
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            password = serializer.data.get('password')
+            response = JWTAuth.verifyToken(jwtToken=token)
+            if not response:
+                responseMsg = {'msg': 'Session for this token is expired!'}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            username=response.get('username')
+            try:
+                user = User.objects.get(username=username)
+                user.set_password(raw_password=password)
+                user.save()
+                responseMsg = {'msg': 'Your password is reset successfully !'}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            except Exception:
+                responseMsg = {'msg': 'Something went wrong !'}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+        return HttpResponse(JSONRenderer().render(serializer.errors))
