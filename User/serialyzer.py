@@ -28,3 +28,7 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
         elif len(data.get('password')) < 6:
             raise serializers.ValidationError("Password length must be 6 or above")
         return data
+
+class UserLoginSerializer(serializers.Serializer):
+    username = serializers.CharField(min_length=4)
+    password = serializers.CharField(min_length=6)
