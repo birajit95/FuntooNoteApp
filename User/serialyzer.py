@@ -11,3 +11,20 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_password(self, password):
         return make_password(password)
 
+class ForgotPasswordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email']
+
+class ResetPasswordSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(min_length=6)
+    class Meta:
+        model = User
+        fields = ['password', 'confirm_password']
+
+    def validate(self, data):
+        if data.get('password') != data.get('password'):
+            raise serializers.ValidationError("Password does not match!")
+        elif len(data.get('password')) < 6:
+            raise serializers.ValidationError("Password length must be 6 or above")
+        return data
