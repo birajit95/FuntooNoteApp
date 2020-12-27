@@ -19,6 +19,7 @@ class UserRegistration(GenericAPIView):
     def get(self, request):
         return render(request, "userRegistrration.html")
 
+    @swagger_auto_schema(responses={200: UserSerializer()})
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -55,9 +56,9 @@ class VerifyEmail(APIView):
         responseMsg = {'msg': 'Your account is activated! Now you can log in'}
         return HttpResponse(JSONRenderer().render(responseMsg))
 
-
 class UserLogin(GenericAPIView):
     serializer_class = UserLoginSerializer
+    @swagger_auto_schema(responses={200: UserLoginSerializer()})
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -93,6 +94,7 @@ def logoutUser(request):
 
 class ForgotPassword(GenericAPIView):
     serializer_class = ForgotPasswordSerializer
+    @swagger_auto_schema(responses={200: ForgotPasswordSerializer()})
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
