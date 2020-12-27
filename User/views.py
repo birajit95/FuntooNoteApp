@@ -12,7 +12,7 @@ from drf_yasg import openapi
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.decorators import login_required
 from rest_framework.generics import GenericAPIView
-
+from .models import TokenBlackLists
 
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
@@ -45,15 +45,23 @@ class VerifyEmail(APIView):
     @swagger_auto_schema(manual_parameters=[token])
     def get(self, request):
         jwtToken = request.GET.get('token')
-        response = JWTAuth.verifyToken(jwtToken=jwtToken)
-        if not response:
-            responseMsg = {'msg': 'Session for this token is expired!'}
+        try:
+            blacklist_token = TokenBlackLists.objects.get(token=jwtToken)
+        except TokenBlackLists.DoesNotExist:
+            blacklist_token = None
+        if blacklist_token is None:
+            response = JWTAuth.verifyToken(jwtToken=jwtToken)
+            if not response:
+                responseMsg = {'msg': 'Session for this token is expired!'}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            username = response.get('username')
+            user = User.objects.get(username=username)
+            user.is_active = True
+            user.save()
+            TokenBlackLists(token=jwtToken).save()
+            responseMsg = {'msg': 'Your account is activated! Now you can log in'}
             return HttpResponse(JSONRenderer().render(responseMsg))
-        username = response.get('username')
-        user = User.objects.get(username=username)
-        user.is_active = True
-        user.save()
-        responseMsg = {'msg': 'Your account is activated! Now you can log in'}
+        responseMsg = {'msg': 'This link is no valid longer'}
         return HttpResponse(JSONRenderer().render(responseMsg))
 
 class UserLogin(GenericAPIView):
@@ -115,14 +123,21 @@ class ForgotPassword(GenericAPIView):
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
     def get(self, request, uid, token):
-        response = JWTAuth.verifyToken(jwtToken=token)
-        if not response:
-            responseMsg = {'msg': 'Session for this token is expired!'}
+        try:
+            blacklist_token = TokenBlackLists.objects.get(token=token)
+        except TokenBlackLists.DoesNotExist:
+            blacklist_token = None
+        if blacklist_token is None:
+            response = JWTAuth.verifyToken(jwtToken=token)
+            if not response:
+                responseMsg = {'msg': 'Session for this token is expired!'}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            responseMsg = {
+                'uid': uid,
+                'token': token
+            }
             return HttpResponse(JSONRenderer().render(responseMsg))
-        responseMsg ={
-            'uid':uid,
-            'token':token
-        }
+        responseMsg = {'msg':'This link is no valid longer'}
         return HttpResponse(JSONRenderer().render(responseMsg))
 
     def put(self, request, uid, token):
@@ -138,6 +153,7 @@ class ResetPassword(GenericAPIView):
                 user = User.objects.get(username=username)
                 user.set_password(raw_password=password)
                 user.save()
+                TokenBlackLists(token=token).save()
                 responseMsg = {'msg': 'Your password is reset successfully !'}
                 return HttpResponse(JSONRenderer().render(responseMsg))
             except Exception:
