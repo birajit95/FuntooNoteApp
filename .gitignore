@@ -7,3 +7,4 @@ AppSecret.py
 FuntooNote/__pycache__/
 migrations
 User/__pycache__/
+NoteApp/__pycache__/
