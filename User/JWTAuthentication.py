@@ -24,3 +24,5 @@ class JWTAuth:
             return verificationStatus
         except jwt.ExpiredSignatureError:
             return False
+        except jwt.InvalidTokenError:
+            return False
