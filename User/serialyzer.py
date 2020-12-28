@@ -49,3 +49,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if dob > date.today():
             raise serializers.ValidationError("Invalid Date of Birth")
         return dob
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(min_length=6)
+    password = serializers.CharField(min_length=6)
+    confirm_password = serializers.CharField(min_length=6)
+
+    def validate(self, data):
+        if data.get('password') != data.get('confirm_password'):
+            raise serializers.ValidationError('Password does not match!')
+        return data
