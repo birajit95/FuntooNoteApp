@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
+from .models import Profile
+from datetime import date
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -37,3 +39,13 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField(min_length=4)
     password = serializers.CharField(min_length=6)
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['bio','dob']
+
+    def validate_dob(self, dob):
+        if dob > date.today():
+            raise serializers.ValidationError("Invalid Date of Birth")
+        return dob
