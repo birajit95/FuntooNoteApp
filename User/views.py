@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse
 from rest_framework.views import APIView
 from .serialyzer import UserSerializer, ResetPasswordSerializer,\
-    ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer
+    ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer, ChangePasswordSerializer
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -179,3 +179,20 @@ class UserProfile(GenericAPIView):
             responseMsg = {'msg':"Your Profile is updated"}
             return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
+
+
+@method_decorator(login_required(login_url='/user/login'), name='dispatch')
+class ChangePassword(GenericAPIView):
+    serializer_class = ChangePasswordSerializer
+    def put(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user = User.objects.get(pk=request.user.pk)
+            if check_password(serializer.data.get('old_password'), user.password):
+                user.set_password(raw_password=serializer.data.get('password'))
+                user.save()
+                responseMsg = {'msg': "Your password is changed"}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            responseMsg = {'msg': "Old password does not match!"}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+        return HttpResponse(JSONRenderer().render({'msg': serializer.errors["non_field_errors"][0]}))
