@@ -6,10 +6,15 @@ from django.contrib.auth.hashers import make_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'is_active']
+        fields = ['username', 'email', 'first_name', 'last_name', 'password']
 
     def validate_password(self, password):
         return make_password(password)
+
+    def validate_email(self, email):
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("This email is already registered! Try with different one")
+        return email
 
 class ForgotPasswordSerializer(serializers.ModelSerializer):
     class Meta:
