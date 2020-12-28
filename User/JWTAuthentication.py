@@ -12,7 +12,7 @@ class JWTAuth:
         pay_load = {
             'username': username,
             'password': password,
-            'exp': datetime.utcnow() + timedelta(minutes=5)
+            'exp': datetime.utcnow() + timedelta(days=1)
         }
         jwtToken = jwt.encode(pay_load, key=secretKey)
         return jwtToken
