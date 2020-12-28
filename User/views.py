@@ -1,6 +1,7 @@
 from django.shortcuts import render, HttpResponse
 from rest_framework.views import APIView
-from .serialyzer import UserSerializer, ResetPasswordSerializer, ForgotPasswordSerializer, UserLoginSerializer
+from .serialyzer import UserSerializer, ResetPasswordSerializer,\
+    ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -13,6 +14,8 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.decorators import login_required
 from rest_framework.generics import GenericAPIView
 from .models import TokenBlackLists
+from .models import Profile
+from django.utils.decorators import method_decorator
 
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
@@ -159,4 +162,20 @@ class ResetPassword(GenericAPIView):
             except Exception:
                 responseMsg = {'msg': 'Something went wrong !'}
                 return HttpResponse(JSONRenderer().render(responseMsg))
+        return HttpResponse(JSONRenderer().render(serializer.errors))
+
+@method_decorator(login_required(login_url='/user/login'), name='dispatch')
+class UserProfile(GenericAPIView):
+    serializer_class = UserProfileSerializer
+    def get(self, request):
+        serializer = self.serializer_class(request.user.profile)
+        return HttpResponse(JSONRenderer().render(serializer.data))
+
+    def put(self, request):
+        user = Profile.objects.get(user_id=request.user.pk)
+        serializer = self.serializer_class(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            responseMsg = {'msg':"Your Profile is updated"}
+            return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
