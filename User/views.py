@@ -97,11 +97,13 @@ class UserLogin(GenericAPIView):
             return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
 
-@login_required(login_url='/user/login/')
-def logoutUser(request):
-    logout(request)
-    responseMsg = {'msg': 'You are logged out successfully'}
-    return HttpResponse(JSONRenderer().render(responseMsg))
+@method_decorator(login_required(login_url='/user/login'), name='dispatch')
+class UserLogOut(APIView):
+    def get(self, request):
+        logout(request)
+        responseMsg = {'msg': 'You are logged out successfully'}
+        return HttpResponse(JSONRenderer().render(responseMsg))
+
 
 class ForgotPassword(GenericAPIView):
     serializer_class = ForgotPasswordSerializer
