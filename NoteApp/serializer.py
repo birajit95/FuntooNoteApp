@@ -8,7 +8,7 @@ class RetriveAllNotesSerializer(serializers.ModelSerializer):
         fields = ['title', 'content', 'date', 'label']
 
 
-class NotesAPISerializer(serializers.ModelSerializer):
+class AddNotesAPISerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
         fields = ['title', 'content']
