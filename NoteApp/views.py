@@ -55,3 +55,17 @@ class UpdateNotesAPI(GenericAPIView):
             responseMsg = {'msg': 'Your note is Updated', 'status': status.HTTP_201_CREATED}
             return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
+
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class DeleteNotesAPI(GenericAPIView):
+    def delete(self, request, note_id):
+        try:
+            note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
+            note.delete()
+            responseMsg = {'msg': 'Your Note is deleted', 'status': status.HTTP_200_OK}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+        except Notes.DoesNotExist:
+            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+
