@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from rest_framework.renderers import JSONRenderer
 from rest_framework.generics import GenericAPIView
-from .serializer import RetriveAllNotesSerializer, AddNotesAPISerializer, UpdateNotesSerializer
+from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer
 from .models import Notes
 from django.db.models import Q
 from rest_framework import status
@@ -20,7 +20,7 @@ class AllNotesAPI(GenericAPIView):
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AddNotesAPI(GenericAPIView):
-    serializer_class = AddNotesAPISerializer
+    serializer_class = AddOrUpdateNotesAPISerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -33,7 +33,7 @@ class AddNotesAPI(GenericAPIView):
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class UpdateNotesAPI(GenericAPIView):
-    serializer_class = UpdateNotesSerializer
+    serializer_class = AddOrUpdateNotesAPISerializer
     def get(self, request, note_id):
         try:
             note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
