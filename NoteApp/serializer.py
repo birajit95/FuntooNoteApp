@@ -16,3 +16,9 @@ class AddNotesAPISerializer(serializers.ModelSerializer):
         if len(data.get('title')) < 2 and len(data.get('content')) < 2 :
             raise serializers.ValidationError('Too Short Notes Title or Content')
         return data
+
+class UpdateNotesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
+        fields = ['title', 'content', 'label']
+
