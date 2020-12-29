@@ -5,7 +5,11 @@ from .serializer import RetriveAllNotesSerializer, AddNotesAPISerializer
 from .models import Notes
 from django.db.models import Q
 from rest_framework import status
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
 
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AllNotesAPI(GenericAPIView):
     serializer_class = RetriveAllNotesSerializer
     def get(self, request):
@@ -13,6 +17,8 @@ class AllNotesAPI(GenericAPIView):
         serializer = self.serializer_class(allNotes, many=True)
         return HttpResponse(JSONRenderer().render(serializer.data))
 
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AddNotesAPI(GenericAPIView):
     serializer_class = AddNotesAPISerializer
     def post(self, request):
