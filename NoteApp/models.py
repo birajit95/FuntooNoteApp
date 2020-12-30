@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class Label(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     label_name = models.CharField(max_length=20, primary_key=True)
 
     def __str__(self):

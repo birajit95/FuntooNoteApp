@@ -4,4 +4,6 @@ from .models import Notes, Label
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['user','title','content','date','label', 'is_archive']
 
-admin.site.register(Label)
+@admin.register(Label)
+class LabelAdmin(admin.ModelAdmin):
+    list_display = ['user', 'label_name']
