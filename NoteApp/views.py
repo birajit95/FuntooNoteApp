@@ -1,8 +1,8 @@
 from django.http import HttpResponse
 from rest_framework.renderers import JSONRenderer
 from rest_framework.generics import GenericAPIView
-from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer
-from .models import Notes
+from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, AddLabelAPISerializer
+from .models import Notes, Label
 from django.db.models import Q
 from rest_framework import status
 from django.utils.decorators import method_decorator
@@ -68,4 +68,16 @@ class DeleteNotesAPI(GenericAPIView):
         except Notes.DoesNotExist:
             responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
             return HttpResponse(JSONRenderer().render(responseMsg))
+
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class AddLabelAPI(GenericAPIView):
+    serializer_class = AddLabelAPISerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            Label(user=request.user, label_name=serializer.data.get('label_name')).save()
+            responseMsg = {'msg':'Label added', 'status':status.HTTP_201_CREATED}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+        return HttpResponse(JSONRenderer().render(serializer.errors))
 

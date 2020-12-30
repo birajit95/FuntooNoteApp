@@ -1,4 +1,4 @@
-from .models import Notes
+from .models import Notes, Label
 from rest_framework import serializers
 
 
@@ -17,3 +17,7 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Too Short Notes Title or Content')
         return data
 
+class AddLabelAPISerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Label
+        fields = ['label_name']
