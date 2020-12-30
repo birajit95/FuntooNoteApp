@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'FuntooNote.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'FuntooNotes',
+        'NAME': 'KeepNotes',
         'USER': os.environ.get('pgdb_username'),
         'PASSWORD': os.environ.get('pgdb_password'),
         'HOST': 'localhost',
