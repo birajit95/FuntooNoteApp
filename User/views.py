@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, redirect
 from rest_framework.views import APIView
 from .serialyzer import UserSerializer, ResetPasswordSerializer,\
     ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer, ChangePasswordSerializer
@@ -78,8 +78,10 @@ class UserLogin(GenericAPIView):
             user = authenticate(request, username=username, password=password)
             if user:
                 login(request, user)
-                responseMsg = {'msg': 'You are logged in successfully'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                redirect_url = request.GET.get('next')
+                if redirect_url:
+                    return redirect(redirect_url)
+                return redirect('/notes/')
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
