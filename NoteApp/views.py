@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from rest_framework.renderers import JSONRenderer
 from rest_framework.generics import GenericAPIView
-from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, AddLabelAPISerializer
+from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, LabelAPISerializer
 from .models import Notes, Label
 from django.db.models import Q
 from rest_framework import status
@@ -72,7 +72,7 @@ class DeleteNotesAPI(GenericAPIView):
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AddLabelAPI(GenericAPIView):
-    serializer_class = AddLabelAPISerializer
+    serializer_class = LabelAPISerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -81,3 +81,11 @@ class AddLabelAPI(GenericAPIView):
             return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
 
+
+method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class RetriveLableAPI(GenericAPIView):
+    serializer_class = LabelAPISerializer
+    def get(self, request):
+        label_data = Label.objects.filter(Q(user=request.user))
+        serializer = self.serializer_class(label_data, many=True)
+        return HttpResponse(JSONRenderer().render(serializer.data))
