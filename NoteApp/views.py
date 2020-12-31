@@ -89,3 +89,15 @@ class RetriveLableAPI(GenericAPIView):
         label_data = Label.objects.filter(Q(user=request.user))
         serializer = self.serializer_class(label_data, many=True)
         return HttpResponse(JSONRenderer().render(serializer.data))
+
+method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class DeleteLabelAPI(GenericAPIView):
+    def delete(self, request, label_name):
+        try:
+            label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
+            label.delete()
+            responseMsg = {'msg': 'Label deleted', 'status': status.HTTP_200_OK}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+        except Label.DoesNotExist:
+            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
+            return HttpResponse(JSONRenderer().render(responseMsg))
