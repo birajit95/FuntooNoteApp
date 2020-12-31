@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import AllNotesAPI, AddNotesAPI, UpdateNotesAPI, DeleteNotesAPI, AddLabelAPI, RetriveLableAPI, DeleteLabelAPI
+from .views import AllNotesAPI, AddNotesAPI, UpdateNotesAPI, DeleteNotesAPI, AddLabelAPI, RetriveLableAPI,\
+    DeleteLabelAPI, AddAndRetrieveNotesForSpecificLabelAPI
 urlpatterns = [
     path('', AllNotesAPI.as_view(), name="allNotes"),
     path('add-note/', AddNotesAPI.as_view(), name='addNote'),
@@ -8,5 +9,6 @@ urlpatterns = [
     path('add-label/', AddLabelAPI.as_view(), name='addLabel'),
     path('get-labels/', RetriveLableAPI.as_view(), name='getLabels'),
     path('delete-label/<str:label_name>/', DeleteLabelAPI.as_view(), name='deleteLabel'),
+    path('notes-for-label/<str:label_name>/', AddAndRetrieveNotesForSpecificLabelAPI.as_view(), name='addNoteForLabel'),
 
 ]

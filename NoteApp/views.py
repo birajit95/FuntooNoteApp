@@ -101,3 +101,31 @@ class DeleteLabelAPI(GenericAPIView):
         except Label.DoesNotExist:
             responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
             return HttpResponse(JSONRenderer().render(responseMsg))
+
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
+    serializer_class = AddOrUpdateNotesAPISerializer
+    def get(self, request, label_name):
+        try:
+            label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
+            notes = Notes.objects.filter(Q(label=label) & Q(user=request.user.pk) & Q(is_archive=False))
+            serializer = RetriveAllNotesSerializer(notes, many=True)
+            return HttpResponse(JSONRenderer().render(serializer.data))
+        except (Label.DoesNotExist, Notes.DoesNotExist):
+            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
+            return HttpResponse(JSONRenderer().render(responseMsg))
+
+    def post(self, request, label_name):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            try:
+                label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
+                Notes(user=request.user, title=serializer.data.get('title'),
+                  content=serializer.data.get('content'), label=label).save()
+                responseMsg = {'msg':'Your note is saved', 'status':status.HTTP_201_CREATED}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+            except Label.DoesNotExist:
+                responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
+                return HttpResponse(JSONRenderer().render(responseMsg))
+        return HttpResponse(JSONRenderer().render(serializer.errors))
