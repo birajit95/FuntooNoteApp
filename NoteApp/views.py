@@ -7,6 +7,7 @@ from django.db.models import Q
 from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from datetime import datetime
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AllNotesAPI(GenericAPIView):
@@ -14,11 +15,6 @@ class AllNotesAPI(GenericAPIView):
     def get(self, request):
         allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk) & Q(is_trash=False))
         serializer = self.serializer_class(allNotes, many=True)
-        for i in range(len(serializer.data)):
-            try:
-                serializer.data[i]['label'] = Label.objects.get(pk=serializer.data[i]['label']).label_name
-            except Label.DoesNotExist:
-                serializer.data[i]['label'] = None
         return HttpResponse(JSONRenderer().render(serializer.data))
 
 
@@ -55,6 +51,8 @@ class UpdateNotesAPI(GenericAPIView):
             return HttpResponse(JSONRenderer().render(responseMsg))
         serializer = self.serializer_class(note, data=request.data, partial=True)
         if serializer.is_valid():
+            note.last_updated = datetime.now()
+            note.save()
             serializer.save()
             responseMsg = {'msg': 'Your note is Updated', 'status': status.HTTP_201_CREATED}
             return HttpResponse(JSONRenderer().render(responseMsg))
