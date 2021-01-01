@@ -15,7 +15,10 @@ class AllNotesAPI(GenericAPIView):
         allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk) & Q(is_trash=False))
         serializer = self.serializer_class(allNotes, many=True)
         for i in range(len(serializer.data)):
-            serializer.data[i]['label'] = Label.objects.get(pk=serializer.data[i]['label']).label_name
+            try:
+                serializer.data[i]['label'] = Label.objects.get(pk=serializer.data[i]['label']).label_name
+            except Label.DoesNotExist:
+                serializer.data[i]['label'] = None
         return HttpResponse(JSONRenderer().render(serializer.data))
 
 
