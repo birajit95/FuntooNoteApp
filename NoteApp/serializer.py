@@ -5,8 +5,7 @@ from rest_framework import serializers
 class RetriveAllNotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
-        fields = ['title', 'content', 'date', 'label']
-
+        fields = ['title', 'content', 'date', 'label','last_updated']
 
 class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
     class Meta:
