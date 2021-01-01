@@ -8,13 +8,14 @@ from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 
-
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AllNotesAPI(GenericAPIView):
     serializer_class = RetriveAllNotesSerializer
     def get(self, request):
-        allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk))
+        allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk) & Q(is_trash=False))
         serializer = self.serializer_class(allNotes, many=True)
+        for i in range(len(serializer.data)):
+            serializer.data[i]['label'] = Label.objects.get(pk=serializer.data[i]['label']).label_name
         return HttpResponse(JSONRenderer().render(serializer.data))
 
 
