@@ -136,3 +136,12 @@ class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
                 responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
                 return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
+
+
+class TrashNotesAPI(GenericAPIView):
+    serializer_class = RetriveAllNotesSerializer
+    def get(self, request):
+        notes =Notes.objects.filter(Q(user=request.user.pk) & Q(is_trash=True))
+        serializer = self.serializer_class(notes, many=True)
+        return HttpResponse(JSONRenderer().render(serializer.data))
+
