@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import AllNotesAPI, AddNotesAPI, UpdateNotesAPI, DeleteNotesAPI, AddLabelAPI, RetriveLableAPI,\
-    DeleteLabelAPI, AddAndRetrieveNotesForSpecificLabelAPI, TrashNotesAPI
+    DeleteLabelAPI, AddAndRetrieveNotesForSpecificLabelAPI, TrashNotesAPI, UnTrashNotesAPI
 urlpatterns = [
     path('', AllNotesAPI.as_view(), name="allNotes"),
     path('add-note/', AddNotesAPI.as_view(), name='addNote'),
@@ -11,5 +11,6 @@ urlpatterns = [
     path('delete-label/<str:label_name>/', DeleteLabelAPI.as_view(), name='deleteLabel'),
     path('notes-for-label/<str:label_name>/', AddAndRetrieveNotesForSpecificLabelAPI.as_view(), name='addNoteForLabel'),
     path('trash/', TrashNotesAPI.as_view(), name='trashNotes'),
+    path('un-trash/<int:note_id>/', UnTrashNotesAPI.as_view(), name='unTrashNotes'),
 
 ]
