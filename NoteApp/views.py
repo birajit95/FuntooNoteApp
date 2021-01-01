@@ -66,8 +66,13 @@ class DeleteNotesAPI(GenericAPIView):
     def delete(self, request, note_id):
         try:
             note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
-            note.delete()
-            responseMsg = {'msg': 'Your Note is deleted', 'status': status.HTTP_200_OK}
+            if note.is_trash:
+                note.delete()
+                responseMsg = {'msg': 'Your Note is deleted permanently', 'status': status.HTTP_200_OK}
+            else:
+                note.is_trash = True
+                note.save()
+                responseMsg = {'msg': 'Your Note is trashed', 'status': status.HTTP_200_OK}
             return HttpResponse(JSONRenderer().render(responseMsg))
         except Notes.DoesNotExist:
             responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
