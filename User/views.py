@@ -1,7 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect
 from rest_framework.views import APIView
 from .serialyzer import UserSerializer, ResetPasswordSerializer,\
-    ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer, ChangePasswordSerializer
+    ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer,\
+    ChangePasswordSerializer, UserDataSerializer, UserProfileDataSerializer
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -170,17 +171,29 @@ class ResetPassword(GenericAPIView):
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
 class UserProfile(GenericAPIView):
-    serializer_class = UserProfileSerializer
+    serializer_class = UserProfileDataSerializer
     def get(self, request):
-        serializer = self.serializer_class(request.user.profile)
-        return HttpResponse(JSONRenderer().render(serializer.data))
+        user = User.objects.get(pk=request.user.pk)
+        userSerializer = dict(UserDataSerializer(user).data)
+        profileSerializer = UserProfileSerializer(request.user.profile)
+        userSerializer.update(profileSerializer.data)
+        return HttpResponse(JSONRenderer().render(userSerializer))
 
     def put(self, request):
-        user = Profile.objects.get(user_id=request.user.pk)
-        serializer = self.serializer_class(user, data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            responseMsg = {'msg':"Your Profile is updated"}
+            try:
+                profile = Profile.objects.get(user=request.user.pk)
+                user = User.objects.get(pk=request.user.pk)
+                profile.bio = serializer.data.get('bio')
+                profile.dob = serializer.data.get('dob')
+                profile.save()
+                user.first_name = serializer.data.get('firstName')
+                user.last_name = serializer.data.get('lastName')
+                user.save()
+                responseMsg = {'msg': "Your Profile is updated"}
+            except Profile.DoesNotExist:
+                responseMsg = {'msg':"Some error occured"}
             return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
 
