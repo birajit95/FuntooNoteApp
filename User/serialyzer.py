@@ -45,10 +45,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['bio','dob']
 
-    def validate_dob(self, dob):
-        if dob > date.today():
-            raise serializers.ValidationError("Invalid Date of Birth")
-        return dob
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(min_length=6)
@@ -59,3 +55,19 @@ class ChangePasswordSerializer(serializers.Serializer):
         if data.get('password') != data.get('confirm_password'):
             raise serializers.ValidationError('Password does not match!')
         return data
+
+class UserDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name']
+
+class UserProfileDataSerializer(serializers.Serializer):
+    firstName = serializers.CharField(max_length=30, min_length=0)
+    lastName = serializers.CharField(max_length=150, min_length=0)
+    bio = serializers.CharField(max_length=500, allow_null=True, allow_blank=True)
+    dob = serializers.DateField(allow_null=True)
+
+    def validate_dob(self, dob):
+        if dob > date.today():
+            raise serializers.ValidationError("Invalid Date of Birth")
+        return dob
