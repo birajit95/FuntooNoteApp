@@ -203,12 +203,14 @@ class UserProfile(GenericAPIView):
 class UpdateProfilePictureAPI(GenericAPIView):
     serializer_class = UserProfilePicSerializer
     def put(self, request):
-        img = request.FILES['image']
-        serializer = self.serializer_class(data={'image':img})
-        serializer.is_valid(raise_exception=True)
-        request.user.profile.image = img
-        request.user.profile.save()
-        return HttpResponse(JSONRenderer().render("Uploaded"))
+        if request.FILES:
+            img = request.FILES['image']
+            serializer = self.serializer_class(data={'image':img})
+            serializer.is_valid(raise_exception=True)
+            request.user.profile.image = img
+            request.user.profile.save()
+            return HttpResponse(JSONRenderer().render("Uploaded"))
+        return HttpResponse(JSONRenderer().render({'msg':'select a file'}))
 
 
     def delete(self, request):
