@@ -43,7 +43,7 @@ class UserLoginSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['bio','dob']
+        fields = ['bio','dob','image']
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -71,3 +71,8 @@ class UserProfileDataSerializer(serializers.Serializer):
         if dob > date.today():
             raise serializers.ValidationError("Invalid Date of Birth")
         return dob
+
+class UserProfilePicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['image']

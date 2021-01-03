@@ -2,7 +2,7 @@ from django.shortcuts import render, HttpResponse, redirect
 from rest_framework.views import APIView
 from .serialyzer import UserSerializer, ResetPasswordSerializer,\
     ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer,\
-    ChangePasswordSerializer, UserDataSerializer, UserProfileDataSerializer
+    ChangePasswordSerializer, UserDataSerializer, UserProfileDataSerializer, UserProfilePicSerializer
 from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -196,6 +196,18 @@ class UserProfile(GenericAPIView):
                 responseMsg = {'msg':"Some error occured"}
             return HttpResponse(JSONRenderer().render(responseMsg))
         return HttpResponse(JSONRenderer().render(serializer.errors))
+
+
+@method_decorator(login_required(login_url='/user/login'), name='dispatch')
+class UpdateProfilePictureAPI(GenericAPIView):
+    serializer_class = UserProfilePicSerializer
+    def put(self, request):
+        img = request.FILES['image']
+        serializer = self.serializer_class(data={'image':img})
+        serializer.is_valid(raise_exception=True)
+        request.user.profile.image = img
+        request.user.profile.save()
+        return HttpResponse(JSONRenderer().render("Uploaded"))
 
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
