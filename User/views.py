@@ -17,6 +17,7 @@ from rest_framework.generics import GenericAPIView
 from .models import TokenBlackLists
 from .models import Profile
 from django.utils.decorators import method_decorator
+import os
 
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
@@ -208,6 +209,18 @@ class UpdateProfilePictureAPI(GenericAPIView):
         request.user.profile.image = img
         request.user.profile.save()
         return HttpResponse(JSONRenderer().render("Uploaded"))
+
+
+    def delete(self, request):
+        image_name = request.user.profile.image.name
+        if image_name != 'profile_pics/default.jpg':
+            media_dir = "/WebApplicationsUsingDjango/FundooNotes/FuntooNote/media/"
+            actual_path = os.path.join(os.getcwd(), media_dir,image_name )
+            os.remove(actual_path)
+            request.user.profile.image = 'profile_pics/default.jpg'
+            request.user.profile.save()
+            return HttpResponse(JSONRenderer().render({'msg': "Profile picture is deleted"}))
+        return HttpResponse(JSONRenderer().render({'msg':'No image to be deleted'}))
 
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
