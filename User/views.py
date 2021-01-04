@@ -207,6 +207,10 @@ class UpdateProfilePictureAPI(GenericAPIView):
             img = request.FILES['image']
             serializer = self.serializer_class(data={'image':img})
             serializer.is_valid(raise_exception=True)
+            old_image_name = request.user.profile.image.name
+            if old_image_name != 'profile_pics/default.jpg':
+                actual_path = os.path.join(os.getcwd(), 'media', old_image_name)
+                os.remove(actual_path)
             request.user.profile.image = img
             request.user.profile.save()
             return HttpResponse(JSONRenderer().render("Uploaded"))
