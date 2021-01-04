@@ -216,8 +216,7 @@ class UpdateProfilePictureAPI(GenericAPIView):
     def delete(self, request):
         image_name = request.user.profile.image.name
         if image_name != 'profile_pics/default.jpg':
-            media_dir = "/WebApplicationsUsingDjango/FundooNotes/FuntooNote/media/"
-            actual_path = os.path.join(os.getcwd(), media_dir,image_name )
+            actual_path = os.path.join(os.getcwd(), 'media',image_name )
             os.remove(actual_path)
             request.user.profile.image = 'profile_pics/default.jpg'
             request.user.profile.save()
