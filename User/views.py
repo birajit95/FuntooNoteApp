@@ -18,12 +18,11 @@ from .models import TokenBlackLists
 from .models import Profile
 from django.utils.decorators import method_decorator
 import os
+from rest_framework import status
+from rest_framework.response import Response
 
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
-    def get(self, request):
-        return render(request, "userRegistrration.html")
-
     @swagger_auto_schema(responses={200: UserSerializer()})
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -37,9 +36,9 @@ class UserRegistration(GenericAPIView):
             relative_url = 'user/verify-email/'
             email_data = Email.configureEmail(jwtToken, user, current_site, relative_url)
             Email.sendEmail(email_data)
-            response = {'msg': "data is created and a confirmation mail is sent to your mail"}
-            return HttpResponse(JSONRenderer().render(response))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+            msg= "data is created and a confirmation mail is sent to your mail"
+            return Response({'response_msg':msg, 'response_data':jwtToken},status = status.HTTP_201_CREATED)
+        return Response({'response_msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyEmail(APIView):
