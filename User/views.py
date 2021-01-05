@@ -56,17 +56,17 @@ class VerifyEmail(APIView):
         if blacklist_token is None:
             response = JWTAuth.verifyToken(jwtToken=jwtToken)
             if not response:
-                responseMsg = {'msg': 'Session for this token is expired!'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                msg = 'Session for this token is expired!'
+                return Response({'response_msg':msg}, status=status.HTTP_401_UNAUTHORIZED)
             username = response.get('username')
             user = User.objects.get(username=username)
             user.is_active = True
             user.save()
             TokenBlackLists(token=jwtToken).save()
-            responseMsg = {'msg': 'Your account is activated! Now you can log in'}
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        responseMsg = {'msg': 'This link is no valid longer'}
-        return HttpResponse(JSONRenderer().render(responseMsg))
+            msg = 'Your account is activated! Now you can log in'
+            return Response({'response_msg':msg}, status=status.HTTP_200_OK)
+        msg = 'This link is no valid longer'
+        return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
 
 class UserLogin(GenericAPIView):
     serializer_class = UserLoginSerializer
