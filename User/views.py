@@ -93,12 +93,11 @@ class UserLogin(GenericAPIView):
                 relative_url = 'user/verify-email/'
                 email_data = Email.configureEmail(jwtToken, user, current_site, relative_url)
                 Email.sendEmail(email_data)
-                responseMsg = {'msg': 'Your account is not active. Please activate your account from the link shared in '
-                                      'your mail '}
-                return HttpResponse(JSONRenderer().render(responseMsg))
-            responseMsg = {'msg': 'Bad Credential found'}
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+                msg = 'Your account is not active. Please activate your account from the link shared in your mail'
+                return Response({'response_msg':msg}, status=status.HTTP_100_CONTINUE)
+            msg = 'Bad Credential found'
+            return Response({'response_msg':msg}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
 class UserLogOut(APIView):
