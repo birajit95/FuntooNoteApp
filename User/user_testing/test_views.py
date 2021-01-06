@@ -1,10 +1,9 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.contrib.auth.models import User
 from rest_framework import status
 import json
 
-class TestUserRegistration(TestCase):
+class TestUserAPP(TestCase):
     def setUp(self):
         self.client = Client()
         self.valid_payload = {
@@ -21,6 +20,15 @@ class TestUserRegistration(TestCase):
             'first_name': 'Akash',
             'last_name': 'Kumar',
             'password': 'birajit123@'
+        }
+
+        self.valid_credential = {
+            'username': 'akash123',
+            'password': 'birajit123@'
+        }
+        self.invalid_credential = {
+            'username': 'akash123',
+            'password': 'birajit125'
         }
 
     def test_user_registration_when_given_valid_payload(self):
@@ -47,3 +55,17 @@ class TestUserRegistration(TestCase):
         get_respose = self.client.get("http://127.0.0.1:8000/user/verify-email/?token="+jwtTokn, content_type='application/json')
         self.assertEquals(get_respose.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_user_login_when_given_valid_credential(self):
+        self.test_user_email_validated_when_given_valid_token()
+        response = self.client.post(reverse('userLogin'), data=json.dumps(self.valid_credential), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+
+    def test_user_login_when_given_invalid_credential(self):
+        self.test_user_email_validated_when_given_valid_token()
+        response = self.client.post(reverse('userLogin'), data=json.dumps(self.invalid_credential), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_login_when_given_valid_credential_but_account_is_not_activated(self):
+        self.test_user_registration_when_given_valid_payload()
+        response = self.client.post(reverse('userLogin'), data=json.dumps(self.valid_credential), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_100_CONTINUE)
