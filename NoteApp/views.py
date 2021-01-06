@@ -28,11 +28,8 @@ class AddNotesAPI(GenericAPIView):
             note = Notes(user=request.user, title=serializer.data.get('title'), content=serializer.data.get('content'))
             note.save()
             for label in serializer.data.get('label'):
-                try:
                     label_obj = Label.objects.get(label_name=label['label_name'])
                     note.label.add(label_obj)
-                except Label.DoesNotExist:
-                    pass
             return Response({'response_msg':'Your note is saved'}, status=status.HTTP_201_CREATED)
         return Response({'response_msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
