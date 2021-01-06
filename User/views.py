@@ -103,8 +103,8 @@ class UserLogin(GenericAPIView):
 class UserLogOut(APIView):
     def get(self, request):
         logout(request)
-        responseMsg = {'msg': 'You are logged out successfully'}
-        return HttpResponse(JSONRenderer().render(responseMsg))
+        msg = 'You are logged out successfully'
+        return Response({'response_msg':msg},status=status.HTTP_204_NO_CONTENT)
 
 
 class ForgotPassword(GenericAPIView):
