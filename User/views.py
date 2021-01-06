@@ -212,8 +212,8 @@ class UpdateProfilePictureAPI(GenericAPIView):
                 os.remove(actual_path)
             request.user.profile.image = img
             request.user.profile.save()
-            return HttpResponse(JSONRenderer().render("Uploaded"))
-        return HttpResponse(JSONRenderer().render({'msg':'select a file'}))
+            return Response({'response_msg':'Your profile picture is uploaded'}, status=status.HTTP_200_OK)
+        return Response({'response_msg':'select a file'}, status=status.HTTP_400_BAD_REQUEST)
 
 
     def delete(self, request):
@@ -223,8 +223,8 @@ class UpdateProfilePictureAPI(GenericAPIView):
             os.remove(actual_path)
             request.user.profile.image = 'profile_pics/default.jpg'
             request.user.profile.save()
-            return HttpResponse(JSONRenderer().render({'msg': "Profile picture is deleted"}))
-        return HttpResponse(JSONRenderer().render({'msg':'No image to be deleted'}))
+            return Response({'response_msg': "Profile picture is deleted"}, status=status.HTTP_200_OK)
+        return Response({'response_msg':'No image to be deleted'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
