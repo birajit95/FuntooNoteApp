@@ -8,6 +8,7 @@ from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
+from rest_framework.response import Response
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AllNotesAPI(GenericAPIView):
@@ -15,7 +16,7 @@ class AllNotesAPI(GenericAPIView):
     def get(self, request):
         allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk) & Q(is_trash=False))
         serializer = self.serializer_class(allNotes, many=True)
-        return HttpResponse(JSONRenderer().render(serializer.data))
+        return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
@@ -24,11 +25,16 @@ class AddNotesAPI(GenericAPIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            Notes(user=request.user, title=serializer.data.get('title'),
-                  content=serializer.data.get('content')).save()
-            responseMsg = {'msg':'Your note is saved', 'status':status.HTTP_201_CREATED}
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+            note = Notes(user=request.user, title=serializer.data.get('title'), content=serializer.data.get('content'))
+            note.save()
+            for label in serializer.data.get('label'):
+                try:
+                    label_obj = Label.objects.get(label_name=label['label_name'])
+                    note.label.add(label_obj)
+                except Label.DoesNotExist:
+                    pass
+            return Response({'response_msg':'Your note is saved'}, status=status.HTTP_201_CREATED)
+        return Response({'response_msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
@@ -95,7 +101,7 @@ class RetriveLableAPI(GenericAPIView):
     def get(self, request):
         label_data = Label.objects.filter(Q(user=request.user))
         serializer = self.serializer_class(label_data, many=True)
-        return HttpResponse(JSONRenderer().render(serializer.data))
+        return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
 method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class DeleteLabelAPI(GenericAPIView):

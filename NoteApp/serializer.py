@@ -17,6 +17,13 @@ class RetriveAllNotesSerializer(serializers.ModelSerializer):
 class LabelSerializer(serializers.Serializer):
     label_name = serializers.CharField(max_length=30)
 
+    def validate(self, data):
+        try:
+            Label.objects.get(label_name=data.get('label_name'))
+        except:
+            raise serializers.ValidationError(f"'{data.get('label_name')}' label is not Found")
+        return data
+
 class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
     label = LabelSerializer(many=True)
     class Meta:
