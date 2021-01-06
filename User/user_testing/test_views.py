@@ -30,6 +30,7 @@ class TestUserAPP(TestCase):
             'username': 'akash123',
             'password': 'birajit125'
         }
+        self.valid_old_password = "birajit123@"
 
     def test_user_registration_when_given_valid_payload(self):
         response = self.client.post(reverse('userRegistration'),data=json.dumps(self.valid_payload),
@@ -138,3 +139,49 @@ class TestUserAPP(TestCase):
         })
         response = self.client.put(reverse('resetPassword',args=[uid,token]),data=data, content_type='application/json')
         self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_change_password_api_when_given_valid_old_password_and_user_is_logged_in(self):
+        self.test_user_login_when_given_valid_credential()
+        data = json.dumps({
+            'old_password': self.valid_old_password,
+            'password':'12345678',
+            'confirm_password': '12345678'
+
+        })
+        response = self.client.put(reverse('changePassword'),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+
+    def test_change_password_api_when_given_invalid_old_password_and_user_is_logged_in(self):
+        self.test_user_login_when_given_valid_credential()
+        data = json.dumps({
+            'old_password': 'abchsss',
+            'password': '12345678',
+            'confirm_password': '12345678'
+
+        })
+        response = self.client.put(reverse('changePassword'), data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEquals(response.data['response_msg'],"Old password does not match!")
+
+    def test_change_password_api_when_given_valid_old_password_and_user_is_logged_in_but_missmatch_new_passwords(self):
+        self.test_user_login_when_given_valid_credential()
+        data = json.dumps({
+            'old_password': self.valid_old_password,
+            'password': '12345678',
+            'confirm_password': '1abccc'
+
+        })
+        response = self.client.put(reverse('changePassword'), data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_change_password_api_when_given_valid_old_password_but_user_is_not_logged_in(self):
+        data = json.dumps({
+            'old_password': self.valid_old_password,
+            'password': '12345678',
+            'confirm_password': '12345678'
+
+        })
+        response = self.client.put(reverse('changePassword'), data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, '/user/login?next=/user/change-password/')
+
