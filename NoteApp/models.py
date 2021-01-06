@@ -15,7 +15,7 @@ class Notes(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=500)
     date = models.DateTimeField(default = datetime.now())
-    label = models.ForeignKey(Label, blank=True, null=True, on_delete=models.SET_NULL)
+    label = models.ManyToManyField(to=Label)
     is_archive = models.BooleanField(default=False)
     is_trash = models.BooleanField(default=False)
     last_updated = models.DateTimeField(null=True, blank=True)
