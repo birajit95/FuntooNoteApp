@@ -124,7 +124,7 @@ class ForgotPassword(GenericAPIView):
             email_data = Email.configureResetPasswordMail(jwtToken, user, current_site, relative_url)
             Email.sendEmail(email_data)
             msg = 'Password reset link is sent to your mail.'
-            return Response({'response_msg':msg}, status=status.HTTP_100_CONTINUE)
+            return Response({'response_msg':msg, 'response_data':jwtToken}, status=status.HTTP_100_CONTINUE)
         return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResetPassword(GenericAPIView):
@@ -137,15 +137,15 @@ class ResetPassword(GenericAPIView):
         if blacklist_token is None:
             response = JWTAuth.verifyToken(jwtToken=token)
             if not response:
-                responseMsg = {'msg': 'Session for this token is expired!'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                msg = 'Session for this token is expired!'
+                return Response({'response_msg':msg},status=status.HTTP_401_UNAUTHORIZED)
             responseMsg = {
                 'uid': uid,
                 'token': token
             }
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        responseMsg = {'msg':'This link is no valid longer'}
-        return HttpResponse(JSONRenderer().render(responseMsg))
+            return Response({'response_msg':responseMsg}, status=status.HTTP_200_OK)
+        msg = 'This link is no valid longer'
+        return Response({'response_msg':msg},status=status.HTTP_403_FORBIDDEN)
 
     def put(self, request, uid, token):
         serializer = self.serializer_class(data=request.data)
@@ -153,20 +153,20 @@ class ResetPassword(GenericAPIView):
             password = serializer.data.get('password')
             response = JWTAuth.verifyToken(jwtToken=token)
             if not response:
-                responseMsg = {'msg': 'Session for this token is expired!'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                msg = 'Session for this token is expired!'
+                return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
             username=response.get('username')
             try:
                 user = User.objects.get(username=username)
                 user.set_password(raw_password=password)
                 user.save()
                 TokenBlackLists(token=token).save()
-                responseMsg = {'msg': 'Your password is reset successfully !'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                msg = 'Your password is reset successfully !'
+                return Response({'response_msg':msg}, status=status.HTTP_200_OK)
             except Exception:
-                responseMsg = {'msg': 'Something went wrong !'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+                msg = 'Something went wrong !'
+                return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
 class UserProfile(GenericAPIView):
