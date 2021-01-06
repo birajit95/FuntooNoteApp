@@ -176,7 +176,7 @@ class UserProfile(GenericAPIView):
         userSerializer = dict(UserDataSerializer(user).data)
         profileSerializer = UserProfileSerializer(request.user.profile)
         userSerializer.update(profileSerializer.data)
-        return HttpResponse(JSONRenderer().render(userSerializer))
+        return Response({'response_msg':userSerializer},status=status.HTTP_200_OK)
 
     def put(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -190,11 +190,12 @@ class UserProfile(GenericAPIView):
                 user.first_name = serializer.data.get('firstName')
                 user.last_name = serializer.data.get('lastName')
                 user.save()
-                responseMsg = {'msg': "Your Profile is updated"}
+                msg = "Your Profile is updated"
+                return Response({'response_msg':msg},status=status.HTTP_200_OK)
             except Profile.DoesNotExist:
-                responseMsg = {'msg':"Some error occured"}
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+                msg = "Some error occurred"
+            return Response({'response_msg': msg}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
