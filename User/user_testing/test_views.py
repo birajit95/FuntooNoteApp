@@ -98,3 +98,43 @@ class TestUserAPP(TestCase):
         email = json.dumps({'email':'birajit1123.com'})
         response = self.client.post(reverse('forgotPassword'),data=email, content_type='application/json')
         self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_reset_password_api_when_given_valid_uid_and_valid_token(self):
+        self.test_user_registration_when_given_valid_payload()
+        email = json.dumps({'email': 'birajitdemo@gmail.com'})
+        response1 = self.client.post(reverse('forgotPassword'), data=email, content_type='application/json')
+        token = response1.data['response_data']
+        uid = 1
+        data = json.dumps({
+            'password':'12345678',
+            'confirm_password':'12345678'
+        })
+        response = self.client.put(reverse('resetPassword',args=[uid,token]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['response_msg'], 'Your password is reset successfully !')
+
+    def test_reset_password_api_when_given_mismatch_passwords(self):
+        self.test_user_registration_when_given_valid_payload()
+        email = json.dumps({'email': 'birajitdemo@gmail.com'})
+        response1 = self.client.post(reverse('forgotPassword'), data=email, content_type='application/json')
+        token = response1.data['response_data']
+        uid = 1
+        data = json.dumps({
+            'password':'12345678',
+            'confirm_password':'abcdgdj'
+        })
+        response = self.client.put(reverse('resetPassword',args=[uid,token]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_reset_password_api_when_given_invalid_token(self):
+        self.test_user_registration_when_given_valid_payload()
+        email = json.dumps({'email': 'birajitdemo@gmail.com'})
+        response1 = self.client.post(reverse('forgotPassword'), data=email, content_type='application/json')
+        token = response1.data['response_data']+'invalid'
+        uid = 1
+        data = json.dumps({
+            'password':'12345678',
+            'confirm_password':'12345678'
+        })
+        response = self.client.put(reverse('resetPassword',args=[uid,token]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN)
