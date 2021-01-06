@@ -116,16 +116,16 @@ class ForgotPassword(GenericAPIView):
             try:
                 user = User.objects.get(email=serializer.data.get('email'))
             except User.DoesNotExist:
-                responseMsg = {'msg': 'Your Mail id is not registered'}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                msg = 'Your Mail id is not registered'
+                return Response({'response_msg':msg}, status=status.HTTP_404_NOT_FOUND)
             jwtToken = JWTAuth.getToken(user.username, user.password)
             current_site = get_current_site(request).domain
             relative_url = 'user/reset-password/'+str(user.pk)+"/"+str(jwtToken)
             email_data = Email.configureResetPasswordMail(jwtToken, user, current_site, relative_url)
             Email.sendEmail(email_data)
-            responseMsg = {'msg': 'Password reset link is sent to your mail.'}
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+            msg = 'Password reset link is sent to your mail.'
+            return Response({'response_msg':msg}, status=status.HTTP_100_CONTINUE)
+        return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
