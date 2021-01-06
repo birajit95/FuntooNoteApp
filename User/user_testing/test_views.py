@@ -80,3 +80,21 @@ class TestUserAPP(TestCase):
         response = self.client.get(reverse('userLogout'))
         self.assertEquals(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEquals(response.data['response_msg'], 'You are logged out successfully')
+
+    def test_forgot_password_api_when_mail_id_is_registered(self):
+        self.test_user_registration_when_given_valid_payload()
+        email = json.dumps({'email':'birajitdemo@gmail.com'})
+        response = self.client.post(reverse('forgotPassword'),data=email, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_100_CONTINUE)
+        self.assertEquals(response.data['response_msg'], 'Password reset link is sent to your mail.')
+
+    def test_forgot_password_api_when_mail_id_is_not_registered(self):
+        email = json.dumps({'email':'birajit@gmail.com'})
+        response = self.client.post(reverse('forgotPassword'),data=email, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEquals(response.data['response_msg'], 'Your Mail id is not registered')
+
+    def test_forgot_password_api_when_mail_id_is_invalid(self):
+        email = json.dumps({'email':'birajit1123.com'})
+        response = self.client.post(reverse('forgotPassword'),data=email, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
