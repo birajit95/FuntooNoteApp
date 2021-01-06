@@ -32,6 +32,19 @@ class TestUserAPP(TestCase):
         }
         self.valid_old_password = "birajit123@"
 
+        self.valid_profile_payload = {
+            "firstName": "Aryan",
+            "lastName": "Nath",
+            "bio": "Hi, I am a passionate software developer",
+            "dob": "1995-09-09"
+        }
+        self.invalid_profile_payload = {
+            "firstName": "",
+            "lastName": "DebNath",
+            "bio": "Hi, I am a passionate software developer",
+            "dob": "199509",
+        }
+
     def test_user_registration_when_given_valid_payload(self):
         response = self.client.post(reverse('userRegistration'),data=json.dumps(self.valid_payload),
                                      content_type = 'application/json'
@@ -185,3 +198,34 @@ class TestUserAPP(TestCase):
         self.assertEquals(response.status_code, status.HTTP_302_FOUND)
         self.assertEquals(response.url, '/user/login?next=/user/change-password/')
 
+    def test_profile_update_api_when_given_valid_payload_and_user_is_logged_in(self):
+        self.test_user_login_when_given_valid_credential()
+        response = self.client.put(reverse('userProfile'), data=json.dumps(self.valid_profile_payload),
+                                   content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['response_msg'], "Your Profile is updated")
+
+    def test_profile_update_api_when_given_invalid_payload_and_user_is_logged_in(self):
+        self.test_user_login_when_given_valid_credential()
+        response = self.client.put(reverse('userProfile'), data=json.dumps(self.invalid_profile_payload),
+                                   content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_profile_api_when_hit_get_request_and_user_is_logged_in(self):
+        self.test_profile_update_api_when_given_valid_payload_and_user_is_logged_in()
+        expected_response_data = json.dumps({
+               'username': 'akash123',
+               'email': 'birajitdemo@gmail.com',
+               'first_name': 'Aryan',
+               'last_name': 'Nath',
+               'bio': 'Hi, I am a passionate software developer',
+               'dob': '1995-09-09',
+               'image': '/media/profile_pics/default.jpg'})
+        response = self.client.get(reverse('userProfile'))
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(json.dumps(response.data['response_msg']),expected_response_data)
+
+    def test_profile_api_when_hit_get_request_and_user_is_not_logged_in(self):
+        response = self.client.get(reverse('userProfile'))
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, '/user/login?next=/user/profile/')
