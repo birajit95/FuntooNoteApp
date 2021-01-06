@@ -69,3 +69,14 @@ class TestUserAPP(TestCase):
         self.test_user_registration_when_given_valid_payload()
         response = self.client.post(reverse('userLogin'), data=json.dumps(self.valid_credential), content_type='application/json')
         self.assertEquals(response.status_code, status.HTTP_100_CONTINUE)
+
+    def test_user_logout_when_user_is_not_logged_in(self):
+        response = self.client.get(reverse('userLogout'))
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, '/user/login?next=/user/logout/')
+
+    def test_user_logout_when_user_is_logged_in(self):
+        self.test_user_login_when_given_valid_credential()
+        response = self.client.get(reverse('userLogout'))
+        self.assertEquals(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEquals(response.data['response_msg'], 'You are logged out successfully')
