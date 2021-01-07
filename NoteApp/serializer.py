@@ -13,7 +13,7 @@ class RetriveAllNotesSerializer(serializers.ModelSerializer):
     label = LabelAPISerializer(many=True)
     class Meta:
         model = Notes
-        fields = ['title', 'content', 'date', 'label','last_updated']
+        fields = ['title', 'content', 'date', 'label','last_updated', 'color']
 
 class LabelSerializer(serializers.Serializer):
     label_name = serializers.CharField(max_length=30, allow_blank=True, allow_null=True)
@@ -23,7 +23,7 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
     label = LabelSerializer(many=True, required=False, default=None)
     class Meta:
         model = Notes
-        fields = ['title', 'content', 'label']
+        fields = ['title', 'content', 'label', 'color']
 
     def validate(self, data):
         if not data.get('label'):
