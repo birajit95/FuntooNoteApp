@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
-
+from colorful.fields import RGBColorField
 
 class Label(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -19,6 +19,7 @@ class Notes(models.Model):
     is_archive = models.BooleanField(default=False)
     is_trash = models.BooleanField(default=False)
     last_updated = models.DateTimeField(null=True, blank=True)
+    color = RGBColorField(colors=['#FF0000', '#00FF00', '#0000FF'], null=True, blank=True)
 
     class Meta:
         ordering = ['-date']

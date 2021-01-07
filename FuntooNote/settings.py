@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'NoteApp.apps.NoteappConfig',
+    'colorful'
 ]
 
 MIDDLEWARE = [
