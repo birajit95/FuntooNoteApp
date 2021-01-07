@@ -64,15 +64,13 @@ class DeleteNotesAPI(GenericAPIView):
             note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
             if note.is_trash:
                 note.delete()
-                responseMsg = {'msg': 'Your Note is deleted permanently', 'status': status.HTTP_200_OK}
+                return Response({'response_msg': 'Your Note is deleted permanently'}, status=status.HTTP_200_OK)
             else:
                 note.is_trash = True
                 note.save()
-                responseMsg = {'msg': 'Your Note is trashed', 'status': status.HTTP_200_OK}
-            return HttpResponse(JSONRenderer().render(responseMsg))
+                return Response({'response_msg': 'Your Note is trashed'}, status=status.HTTP_200_OK)
         except Notes.DoesNotExist:
-            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
-            return HttpResponse(JSONRenderer().render(responseMsg))
+            return Response({'response_msg': 'This Note is not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
@@ -82,9 +80,8 @@ class AddLabelAPI(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             Label(user=request.user, label_name=serializer.data.get('label_name')).save()
-            responseMsg = {'msg':'Label added', 'status':status.HTTP_201_CREATED}
-            return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+            return Response({'response_msg':'Label added'},status=status.HTTP_201_CREATED)
+        return Response({'response_msg':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
 
 
 method_decorator(login_required(login_url='/user/login/'), name='dispatch')
@@ -93,6 +90,8 @@ class RetriveLableAPI(GenericAPIView):
     def get(self, request):
         label_data = Label.objects.filter(Q(user=request.user))
         serializer = self.serializer_class(label_data, many=True)
+        if not serializer.data:
+            return Response({'response_data': 'No labels found'}, status=status.HTTP_404_NOT_FOUND)
         return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
 method_decorator(login_required(login_url='/user/login/'), name='dispatch')
@@ -101,11 +100,9 @@ class DeleteLabelAPI(GenericAPIView):
         try:
             label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
             label.delete()
-            responseMsg = {'msg': 'Label deleted', 'status': status.HTTP_200_OK}
-            return HttpResponse(JSONRenderer().render(responseMsg))
+            return Response({'response_msg': 'Label deleted'}, status = status.HTTP_200_OK)
         except Label.DoesNotExist:
-            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
-            return HttpResponse(JSONRenderer().render(responseMsg))
+            return Response({'response_msg': f'{label_name} label is not exist'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
