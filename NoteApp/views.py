@@ -1,5 +1,3 @@
-from django.http import HttpResponse
-from rest_framework.renderers import JSONRenderer
 from rest_framework.generics import GenericAPIView
 from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, LabelAPISerializer, AddNotesForSpecificLabelSerializer
 from .models import Notes, Label
@@ -137,8 +135,10 @@ class TrashNotesAPI(GenericAPIView):
     serializer_class = RetriveAllNotesSerializer
     def get(self, request):
         notes =Notes.objects.filter(Q(user=request.user.pk) & Q(is_trash=True))
+        if not notes:
+            return Response({'response_data': 'No notes in Trash'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(notes, many=True)
-        return HttpResponse(JSONRenderer().render(serializer.data))
+        return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class UnTrashNotesAPI(GenericAPIView):
@@ -147,8 +147,7 @@ class UnTrashNotesAPI(GenericAPIView):
             note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user.pk) & Q(is_trash=True))
             note.is_trash = False
             note.save()
-            responseMsg = {'msg': 'Your Note is restored', 'status': status.HTTP_200_OK}
+            return Response({'response_msg': 'Your Note is restored'}, status=status.HTTP_200_OK)
         except Notes.DoesNotExist:
-            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
-        return HttpResponse(JSONRenderer().render(responseMsg))
+            return Response({'response_msg': 'This Note is not exist'}, status=status.HTTP_401_UNAUTHORIZED)
 
