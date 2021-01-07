@@ -13,6 +13,8 @@ class AllNotesAPI(GenericAPIView):
     serializer_class = RetriveAllNotesSerializer
     def get(self, request):
         allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk) & Q(is_trash=False))
+        if not allNotes:
+            return Response({'response_data': 'No notes available'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(allNotes, many=True)
         return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
