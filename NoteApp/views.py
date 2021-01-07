@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from rest_framework.renderers import JSONRenderer
 from rest_framework.generics import GenericAPIView
-from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, LabelAPISerializer
+from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, LabelAPISerializer, AddNotesForSpecificLabelSerializer
 from .models import Notes, Label
 from django.db.models import Q
 from rest_framework import status
@@ -102,35 +102,35 @@ class DeleteLabelAPI(GenericAPIView):
             label.delete()
             return Response({'response_msg': 'Label deleted'}, status = status.HTTP_200_OK)
         except Label.DoesNotExist:
-            return Response({'response_msg': f'{label_name} label is not exist'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'response_msg': f'{label_name} label is not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
-    serializer_class = AddOrUpdateNotesAPISerializer
+    serializer_class = AddNotesForSpecificLabelSerializer
     def get(self, request, label_name):
         try:
             label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
             notes = Notes.objects.filter(Q(label=label) & Q(user=request.user.pk) & Q(is_archive=False))
+            if not notes:
+                return Response({'response_data': f"No notes available for label '{label_name}' "}, status=status.HTTP_200_OK)
             serializer = RetriveAllNotesSerializer(notes, many=True)
-            return HttpResponse(JSONRenderer().render(serializer.data))
+            return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
         except (Label.DoesNotExist, Notes.DoesNotExist):
-            responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
-            return HttpResponse(JSONRenderer().render(responseMsg))
+            return Response({'response_msg': f'{label_name} label is not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request, label_name):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             try:
                 label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
-                Notes(user=request.user, title=serializer.data.get('title'),
-                  content=serializer.data.get('content'), label=label).save()
-                responseMsg = {'msg':'Your note is saved', 'status':status.HTTP_201_CREATED}
-                return HttpResponse(JSONRenderer().render(responseMsg))
+                note = Notes(user=request.user, title=serializer.data.get('title'),content=serializer.data.get('content'))
+                note.save()
+                note.label.add(label)
+                return Response({'response_msg':'Your note is saved'}, status=status.HTTP_201_CREATED)
             except Label.DoesNotExist:
-                responseMsg = {'msg': 'Your not authorised to access this data', 'status': status.HTTP_401_UNAUTHORIZED}
-                return HttpResponse(JSONRenderer().render(responseMsg))
-        return HttpResponse(JSONRenderer().render(serializer.errors))
+                return Response({'response_msg': f'{label_name} label is not exist'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class TrashNotesAPI(GenericAPIView):
