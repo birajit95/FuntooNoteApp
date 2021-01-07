@@ -47,3 +47,13 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
                     note.delete()
                     raise serializers.ValidationError({'response_msg': f"{label['label_name']} label is not exist"})
         return note
+
+class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
+        fields = ['title','content']
+
+    def validate(self, data):
+        if len(data.get('title')) < 2 or len(data.get('content')) < 2 :
+            raise serializers.ValidationError('Too Short Notes Title or Content')
+        return data
