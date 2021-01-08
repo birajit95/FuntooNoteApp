@@ -290,3 +290,57 @@ class TestNotesAPIs(TestCase):
         self.assertEquals(response.status_code, status.HTTP_302_FOUND)
         self.assertEquals(response.url, f'/user/login/?next=/notes/delete-note/{note_id}/')
 
+    # Test cases for Note addition for specific label
+
+    def test_add_note_for_given_label_when_user_is_logged_in(self):
+        self.userWiseLabelData(user_1_label="Cat",user_2_label='Dog')
+        self.user_login(user=self.user_1)
+        label = 'Cat'
+        valid_data = json.dumps({
+            'title':'Hello',
+            'content':'How are you?'
+        })
+        response = self.client.post(reverse('addNoteForLabel', args=[label]), data=valid_data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+        self.assertEquals(response.data['response_msg'],'Your note is saved')
+
+    def test_add_note_for_given_label_when_user_is_logged_in_and_color_is_given(self):
+        self.userWiseLabelData(user_1_label="Cat",user_2_label='Dog')
+        self.user_login(user=self.user_1)
+        label = 'Cat'
+        valid_data = json.dumps({
+            'title':'Hello',
+            'content':'How are you?',
+            'color':'#FF5733'
+        })
+        response = self.client.post(reverse('addNoteForLabel', args=[label]), data=valid_data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+        self.assertEquals(response.data['response_msg'],'Your note is saved')
+
+    def test_add_note_for_given_label_when_user_is_logged_in_but_label_is_not_found(self):
+        self.userWiseLabelData(user_1_label="Cat",user_2_label='Dog')
+        self.user_login(user=self.user_1)
+        label = 'Dog'
+        valid_data = json.dumps({
+            'title':'Hello',
+            'content':'How are you?',
+            'color':'#FF5733'
+        })
+        response = self.client.post(reverse('addNoteForLabel', args=[label]), data=valid_data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEquals(response.data['response_msg'],f'{label} label is not exist')
+
+
+    def test_add_note_for_given_label_when_user_is_not_logged_in(self):
+        self.userWiseLabelData(user_1_label="Cat",user_2_label='Dog')
+        label = 'Dog'
+        valid_data = json.dumps({
+            'title':'Hello',
+            'content':'How are you?',
+            'color':'#FF5733'
+        })
+        response = self.client.post(reverse('addNoteForLabel', args=[label]), data=valid_data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, f'/user/login/?next=/notes/notes-for-label/{label}/')
+
+
