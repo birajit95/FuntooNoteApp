@@ -51,7 +51,7 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
 class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
-        fields = ['title','content']
+        fields = ['title','content','color']
 
     def validate(self, data):
         if len(data.get('title')) < 2 or len(data.get('content')) < 2 :

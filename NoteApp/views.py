@@ -127,7 +127,8 @@ class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
         if serializer.is_valid():
             try:
                 label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
-                note = Notes(user=request.user, title=serializer.data.get('title'),content=serializer.data.get('content'))
+                note = Notes(user=request.user, title=serializer.data.get('title'),
+                             content=serializer.data.get('content'),color=serializer.data.get('color'))
                 note.save()
                 note.label.add(label)
                 return Response({'response_msg':'Your note is saved'}, status=status.HTTP_201_CREATED)
