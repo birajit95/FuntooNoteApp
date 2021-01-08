@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from ..models import Label
 from django.contrib.auth import login
 from django.urls import reverse
 from rest_framework import status
@@ -31,6 +32,11 @@ class TestNotesAPIs(TestCase):
             'password':'123456'
         })
         self.client.post(reverse('userLogin'), data=self.valid_credential, content_type='application/json')
+
+
+    def userWiseLabelData(self, user_1_label=None, user_2_label=None):
+        Label.objects.create(user=self.user_1, label_name=user_1_label)
+        Label.objects.create(user=self.user_2, label_name=user_2_label)
 
     def test_add_label_when_user_is_logged_in(self, label_name='Google'):
         self.user_login(user='birajit95')
@@ -74,3 +80,32 @@ class TestNotesAPIs(TestCase):
         self.test_add_label_when_user_is_logged_in(label_name='Dog')
         response = self.client.get(reverse('getLabels'))
         self.assertEquals(response.status_code, status.HTTP_200_OK)
+
+    def test_delete_label_when_user_is_logged_in_and_label_is_found(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Cat")
+        label_name = 'Cat'
+        response = self.client.delete(reverse('deleteLabel',args=[label_name]))
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['response_msg'],'Label deleted')
+
+    def test_delete_label_when_user_is_logged_in_and_label_is_not_found(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Cat")
+        label_name = 'Dog'
+        response = self.client.delete(reverse('deleteLabel',args=[label_name]))
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEquals(response.data['response_msg'],f'{label_name} label is not exist')
+
+    def test_delete_labels_when_user_is_not_loged_in(self):
+        label_name = "Google"
+        response = self.client.delete(reverse('deleteLabel', args=[label_name]))
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url,'/user/login/?next=/notes/delete-label/Google/')
+
+    def test_delete_label_when_user_1_is_logged_in_and_tries_to_delete_user_2s_label(self):
+        self.userWiseLabelData(user_1_label="Cat",user_2_label='Dog')
+        self.user_login(user="birajit95")
+        label_name = 'Dog'
+        response = self.client.delete(reverse('deleteLabel',args=[label_name]))
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEquals(response.data['response_msg'],f'{label_name} label is not exist')
+
