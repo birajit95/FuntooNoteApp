@@ -84,7 +84,7 @@ class AddLabelAPI(GenericAPIView):
         return Response({'response_msg':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
 
 
-method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class RetriveLableAPI(GenericAPIView):
     serializer_class = LabelAPISerializer
     def get(self, request):
@@ -94,7 +94,7 @@ class RetriveLableAPI(GenericAPIView):
             return Response({'response_data': 'No labels found'}, status=status.HTTP_404_NOT_FOUND)
         return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
-method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class DeleteLabelAPI(GenericAPIView):
     def delete(self, request, label_name):
         try:
