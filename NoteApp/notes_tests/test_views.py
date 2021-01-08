@@ -56,3 +56,21 @@ class TestNotesAPIs(TestCase):
         })
         response = self.client.post(reverse('addLabel'), data=label, content_type='application/json')
         self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_all_labels_when_user_is_loged_in_and_no_labels_found(self):
+        self.user_login(user='birajit95')
+        response = self.client.get(reverse('getLabels'))
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEquals(response.data['response_data'],'No labels found')
+
+    def test_get_all_labels_when_user_is_not_loged_in(self):
+        response = self.client.get(reverse('getLabels'))
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url,'/user/login/?next=/notes/get-labels/')
+
+    def test_get_all_labels_when_user_is_loged_in_and_labels_found(self):
+        self.user_login(user='birajit95')
+        self.test_add_label_when_user_is_logged_in(label_name='Cat')
+        self.test_add_label_when_user_is_logged_in(label_name='Dog')
+        response = self.client.get(reverse('getLabels'))
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
