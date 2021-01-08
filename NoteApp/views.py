@@ -155,5 +155,5 @@ class UnTrashNotesAPI(GenericAPIView):
             note.save()
             return Response({'response_msg': 'Your Note is restored'}, status=status.HTTP_200_OK)
         except Notes.DoesNotExist:
-            return Response({'response_msg': 'This Note is not exist'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'response_msg': 'This Note is not exist'}, status=status.HTTP_404_NOT_FOUND)
 
