@@ -13,14 +13,6 @@ class TestNotesAPIs(TestCase):
         self.user_1 = User.objects.create_user(username='birajit95',email='birajit95@gmail.com',password='123456')
         self.user_2 = User.objects.create_user(username='aryan75',email='aryan95@gmail.com',password='123456')
 
-        self.valid_payload_1 = {
-            'title':'Hello',
-            'content':'world',
-            'label':[{
-                'label_name':'Google'
-            }],
-            'color':'#FF5733'
-        }
 
     def user_login(self, user=None):
         if user:
@@ -109,3 +101,60 @@ class TestNotesAPIs(TestCase):
         self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEquals(response.data['response_msg'],f'{label_name} label is not exist')
 
+    def test_add_note_with_label_and_color_when_user_is_logged_in(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Google")
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Google'
+            }],
+            'color': '#FF5733'
+        }
+        response = self.client.post(reverse('addNote'),data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+
+    def test_add_note_without_label_and_color_when_user_is_logged_in(self):
+        self.user_login()
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+        }
+        response = self.client.post(reverse('addNote'),data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+
+    def test_add_note_without_label_but_with_color_when_user_is_logged_in(self):
+        self.user_login()
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'color': '#FF5733'
+        }
+        response = self.client.post(reverse('addNote'),data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+
+    def test_add_note_with_label_but_without_color_when_user_is_logged_in(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Google")
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Google'
+            }],
+        }
+        response = self.client.post(reverse('addNote'),data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+
+    def test_add_note_with_label_but_label_is_not_present_and_when_user_is_logged_in(self):
+        self.userWiseLabelData(user_1_label="Google",user_2_label="Cat")
+        self.user_login(user='birajit95')
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Cat'
+            }],
+        }
+        response = self.client.post(reverse('addNote'),data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEquals(f"{response.data['response_msg']}",'Cat label is not exist')
