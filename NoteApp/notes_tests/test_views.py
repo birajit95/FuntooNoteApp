@@ -357,6 +357,41 @@ class TestNotesAPIs(TestCase):
         self.assertEquals(response.status_code, status.HTTP_302_FOUND)
         self.assertEquals(response.url, f'/user/login/?next=/notes/notes-for-label/{label}/')
 
+    # Test cases for Trash and untrash APIs
+
+    def test_get_trash_notes_when_user_is_logged_in_and_notes_are_available_in_trash(self):
+        Notes.objects.create(title="Django",content="Hello Django", is_trash=True, user=self.user_1)
+        self.user_login(user=self.user_1)
+        response = self.client.get(reverse('trashNotes'))
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+
+    def test_get_trash_notes_when_user_is_logged_in_and_notes_are_not_available_in_trash(self):
+        self.user_login(user=self.user_1)
+        response = self.client.get(reverse('trashNotes'))
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_trash_notes_when_user_is_not_logged_in(self):
+        Notes.objects.create(title="Django",content="Hello Django", is_trash=True, user=self.user_1)
+        response = self.client.get(reverse('trashNotes'))
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, f'/user/login/?next=/notes/trash/')
 
 
+    def test_restore_trash_note_when_user_is_logged_in_and_valid_note_id_is_given(self):
+       note = Notes.objects.create(title="Django", content="Hello Django", is_trash=True, user=self.user_1)
+       self.user_login(user=self.user_1)
+       response = self.client.patch(reverse('unTrashNotes',args=[note.id]))
+       self.assertEquals(response.status_code, status.HTTP_200_OK)
 
+    def test_restore_trash_note_when_user_is_logged_in_and_invalid_note_id_is_given(self):
+       self.addNote(title="abc",content='ABC',label_name='Cat',user=self.user_1)
+       self.user_login(user=self.user_1)
+       note_id = 200
+       response = self.client.patch(reverse('unTrashNotes',args=[note_id]))
+       self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_restore_trash_note_when_user_is_not_logged_in(self):
+       note_id = self.addNote(title="abc",content='ABC',label_name='Cat',user=self.user_1)
+       response = self.client.patch(reverse('unTrashNotes',args=[note_id]))
+       self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+       self.assertEquals(response.url, f'/user/login/?next=/notes/un-trash/{note_id}/')
