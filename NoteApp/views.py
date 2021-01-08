@@ -43,6 +43,7 @@ class UpdateNotesAPI(GenericAPIView):
             note.last_updated = datetime.now()
             note.title = serializer.data.get('title')
             note.content = serializer.data.get('content')
+            note.color = serializer.data.get('color')
             if serializer.data.get('label'):
                 for label in serializer.data.get('label'):
                     try:
