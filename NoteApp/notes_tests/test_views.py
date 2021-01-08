@@ -53,7 +53,7 @@ class TestNotesAPIs(TestCase):
         self.assertEquals(response.status_code, status.HTTP_302_FOUND)
         self.assertEquals(response.url, '/user/login/?next=/notes/add-label/')
 
-    def test_add_label_when_user_is_logged_in_and_given_black_input(self, label_name=None):
+    def test_add_label_when_user_is_logged_in_and_given_blank_input(self, label_name=None):
         self.user_login(user='birajit95')
         label = json.dumps({
             'label_name':label_name
@@ -261,4 +261,32 @@ class TestNotesAPIs(TestCase):
                                      content_type='application/json')
         self.assertEquals(response.status_code, status.HTTP_302_FOUND)
         self.assertEquals(response.url, f'/user/login/?next=/notes/update-note/{note_id}/')
+
+    def test_delete_note_when_user_is_logged_in_and_when_note_is_not_trashsed(self):
+        note_id = self.addNote(title="Hello", content="World", label_name="Google", user=self.user_1)
+        self.user_login(user=self.user_1)
+        response = self.client.delete(reverse('deleteNote',args=[note_id]),content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['response_msg'], 'Your Note is trashed')
+
+    def test_delete_note_when_user_is_logged_in_and_when_note_is_already_trashsed(self):
+        note_id = self.addNote(title="Hello", content="World", label_name="Google", user=self.user_1)
+        self.user_login(user=self.user_1)
+        self.client.delete(reverse('deleteNote',args=[note_id]),content_type='application/json')
+        response = self.client.delete(reverse('deleteNote',args=[note_id]),content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['response_msg'], 'Your Note is deleted permanently')
+
+    def test_delete_note_when_user_is_logged_in_but_note_is_not_present(self):
+        self.addNote(title="Hello", content="World", label_name="Google", user=self.user_1)
+        self.user_login(user=self.user_1)
+        invalid_note_id = 100
+        response = self.client.delete(reverse('deleteNote',args=[invalid_note_id]),content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_note_when_user_is_not_logged_in(self):
+        note_id = self.addNote(title="Hello", content="World", label_name="Google", user=self.user_1)
+        response = self.client.delete(reverse('deleteNote',args=[note_id]),content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, f'/user/login/?next=/notes/delete-note/{note_id}/')
 
