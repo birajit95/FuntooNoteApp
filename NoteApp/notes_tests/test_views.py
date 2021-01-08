@@ -343,4 +343,20 @@ class TestNotesAPIs(TestCase):
         self.assertEquals(response.status_code, status.HTTP_302_FOUND)
         self.assertEquals(response.url, f'/user/login/?next=/notes/notes-for-label/{label}/')
 
+    def test_get_notes_for_given_label_when_user_is_logged_in(self):
+        self.addNote(title='Hello', content='world', label_name='Cat', user=self.user_1)
+        self.user_login(user=self.user_1)
+        label = 'Cat'
+        response = self.client.get(reverse('addNoteForLabel', args=[label]), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+
+    def test_get_notes_for_given_label_when_user_is_not_logged_in(self):
+        self.addNote(title='Hello', content='world', label_name='Cat', user=self.user_1)
+        label = 'Cat'
+        response = self.client.get(reverse('addNoteForLabel', args=[label]), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+        self.assertEquals(response.url, f'/user/login/?next=/notes/notes-for-label/{label}/')
+
+
+
 
