@@ -43,15 +43,17 @@ class UpdateNotesAPI(GenericAPIView):
             note.last_updated = datetime.now()
             note.title = serializer.data.get('title')
             note.content = serializer.data.get('content')
-            for label in serializer.data.get('label'):
-                try:
-                    Label.objects.get(Q(label_name=label['label_name']) & Q(user=request.user))
-                except Label.DoesNotExist:
-                    return Response({'response_msg': 'This label is not exist'}, status=status.HTTP_404_NOT_FOUND)
-            note.label.clear()
-            for label in serializer.data.get('label'):
-                    label_obj = Label.objects.get(Q(label_name=label['label_name']) & Q(user=request.user))
-                    note.label.add(label_obj)
+            if serializer.data.get('label'):
+                for label in serializer.data.get('label'):
+                    try:
+                        Label.objects.get(Q(label_name=label['label_name']) & Q(user=request.user))
+                    except Label.DoesNotExist:
+                        return Response({'response_msg': 'This label is not exist'}, status=status.HTTP_404_NOT_FOUND)
+                note.label.clear()
+            if serializer.data.get('label'):
+                for label in serializer.data.get('label'):
+                        label_obj = Label.objects.get(Q(label_name=label['label_name']) & Q(user=request.user))
+                        note.label.add(label_obj)
             note.save()
             return Response({'response_msg': 'Your note is Updated'}, status=status.HTTP_200_OK)
         return Response({'response_msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
