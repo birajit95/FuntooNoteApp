@@ -19,7 +19,9 @@ from django.utils.decorators import method_decorator
 import os
 from rest_framework import status
 from rest_framework.response import Response
-from FuntooNote.FuntooNote.logger import logger
+import sys
+sys.path.append("..")
+from FuntooNote.logger import logger
 
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
@@ -145,12 +147,18 @@ class ForgotPassword(GenericAPIView):
     serializer_class = ForgotPasswordSerializer
     @swagger_auto_schema(responses={200: ForgotPasswordSerializer()})
     def post(self, request):
+        """
+        This api is used to send reset password request to server
+        @param request: user registered email id
+        @return: sends a password reset link to user validated email id
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             try:
                 user = User.objects.get(email=serializer.data.get('email'))
             except User.DoesNotExist:
                 msg = 'Your Mail id is not registered'
+                logger.info(f"{serializer.data.get('email')} is not registered")
                 return Response({'response_msg':msg}, status=status.HTTP_404_NOT_FOUND)
             jwtToken = JWTAuth.getToken(user.username, user.password)
             current_site = get_current_site(request).domain
@@ -158,12 +166,19 @@ class ForgotPassword(GenericAPIView):
             email_data = Email.configureResetPasswordMail(jwtToken, user, current_site, relative_url)
             Email.sendEmail(email_data)
             msg = 'Password reset link is sent to your mail.'
+            logger(f'password reset link is sent to {user.email}')
             return Response({'response_msg':msg, 'response_data':jwtToken}, status=status.HTTP_100_CONTINUE)
+        logger.error(serializer.errors)
         return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
     def get(self, request, uid, token):
+        """
+        This api accepts the get request hit from the email on clicked on link
+        @param : user id and token
+        @return: user id and token after verification
+        """
         try:
             blacklist_token = TokenBlackLists.objects.get(token=token)
         except TokenBlackLists.DoesNotExist:
@@ -172,22 +187,30 @@ class ResetPassword(GenericAPIView):
             response = JWTAuth.verifyToken(jwtToken=token)
             if not response:
                 msg = 'Session for this token is expired!'
+                logger.info('Token session expired!')
                 return Response({'response_msg':msg},status=status.HTTP_401_UNAUTHORIZED)
             responseMsg = {
                 'uid': uid,
                 'token': token
             }
             return Response({'response_msg':responseMsg}, status=status.HTTP_200_OK)
+        logger.info('This token is already used!')
         msg = 'This link is no valid longer'
         return Response({'response_msg':msg},status=status.HTTP_403_FORBIDDEN)
 
     def put(self, request, uid, token):
+        """
+        This API is used to reset user password
+        @param: uid and token fetched for get request
+        @return: reset user password
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             password = serializer.data.get('password')
             response = JWTAuth.verifyToken(jwtToken=token)
             if not response:
                 msg = 'Session for this token is expired!'
+                logger.info('Token session expired!')
                 return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
             username=response.get('username')
             try:
@@ -196,10 +219,13 @@ class ResetPassword(GenericAPIView):
                 user.save()
                 TokenBlackLists(token=token).save()
                 msg = 'Your password is reset successfully !'
+                logger.info(f"{username}'s password reset successfully")
                 return Response({'response_msg':msg}, status=status.HTTP_200_OK)
-            except Exception:
+            except Exception as e:
                 msg = 'Something went wrong !'
+                logger.error(e)
                 return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
+        logger.error(serializer.errors)
         return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
