@@ -89,16 +89,25 @@ class UserLogin(GenericAPIView):
     serializer_class = UserLoginSerializer
     @swagger_auto_schema(responses={200: UserLoginSerializer()})
     def post(self, request):
+        """
+        This API is used to authenticate user to access resources
+        @param request: user credential like username and password
+        @return: Redirects to all notes url on successful login
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             username = serializer.data.get('username')
             password = serializer.data.get('password')
             user = authenticate(request, username=username, password=password)
             if user:
+                logger.info(f"{username} is authenticated")
                 login(request, user)
+                logger.info(f"{username} is logged in")
                 redirect_url = request.GET.get('next')
                 if redirect_url:
+                    logger(f'Redirects to {redirect_url}')
                     return redirect(redirect_url)
+                logger(f'Redirects to /notes/')
                 return redirect('/notes/')
             try:
                 user = User.objects.get(username=username)
@@ -110,17 +119,25 @@ class UserLogin(GenericAPIView):
                 relative_url = 'user/verify-email/'
                 email_data = Email.configureEmail(jwtToken, user, current_site, relative_url)
                 Email.sendEmail(email_data)
+                logger.info(f"{username}'s account is not active, activation mail is sent to {user.email}")
                 msg = 'Your account is not active. Please activate your account from the link shared in your mail'
                 return Response({'response_msg':msg}, status=status.HTTP_100_CONTINUE)
             msg = 'Bad Credential found'
+            logger.error(f"Credential failure for {username}")
             return Response({'response_msg':msg}, status=status.HTTP_401_UNAUTHORIZED)
+        logger.error(serializer.errors)
         return Response({'msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 @method_decorator(login_required(login_url='/user/login'), name='dispatch')
 class UserLogOut(APIView):
     def get(self, request):
+        """
+        This api is for user log out
+        @return: release all resources from user on logged out
+        """
         logout(request)
         msg = 'You are logged out successfully'
+        logger.info(f"{request.user.username} is logged out")
         return Response({'response_msg':msg},status=status.HTTP_204_NO_CONTENT)
 
 
