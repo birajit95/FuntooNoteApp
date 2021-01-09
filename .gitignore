@@ -8,3 +8,7 @@ FuntooNote/__pycache__/
 migrations
 User/__pycache__/
 NoteApp/__pycache__/
+NoteApp/notes_tests/__pycache__/
+User/templates/
+User/user_testing/__pycache__/
+.scannerwork/
