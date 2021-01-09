@@ -232,13 +232,23 @@ class ResetPassword(GenericAPIView):
 class UserProfile(GenericAPIView):
     serializer_class = UserProfileDataSerializer
     def get(self, request):
+        """
+        This api is used to fetch user profile
+        @return: User profile data
+        """
         user = User.objects.get(pk=request.user.pk)
         userSerializer = dict(UserDataSerializer(user).data)
         profileSerializer = UserProfileSerializer(request.user.profile)
         userSerializer.update(profileSerializer.data)
+        logger.info(f"{request.user.username}'s profile is accessed")
         return Response({'response_msg':userSerializer},status=status.HTTP_200_OK)
 
     def put(self, request):
+        """
+        This API is used to update user profile
+        @param: user profile data
+        @return: updates user profile
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             try:
@@ -251,10 +261,13 @@ class UserProfile(GenericAPIView):
                 user.last_name = serializer.data.get('lastName')
                 user.save()
                 msg = "Your Profile is updated"
+                logger.info(f"{user.username}'s profile is updated")
                 return Response({'response_msg':msg},status=status.HTTP_200_OK)
-            except Profile.DoesNotExist:
+            except Profile.DoesNotExist as e:
                 msg = "Some error occurred"
+                logger.error(e)
             return Response({'response_msg': msg}, status=status.HTTP_403_FORBIDDEN)
+        logger.error(serializer.errors)
         return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -262,6 +275,11 @@ class UserProfile(GenericAPIView):
 class UpdateProfilePictureAPI(GenericAPIView):
     serializer_class = UserProfilePicSerializer
     def put(self, request):
+        """
+        This api is used to update user profile picture
+        @param: profile picture
+        @return: updates profile picture
+        """
         if request.FILES:
             img = request.FILES['image']
             serializer = self.serializer_class(data={'image':img})
@@ -272,18 +290,26 @@ class UpdateProfilePictureAPI(GenericAPIView):
                 os.remove(actual_path)
             request.user.profile.image = img
             request.user.profile.save()
+            logger.info(f"{request.user.username}'s profile picture is updated")
             return Response({'response_msg':'Your profile picture is uploaded'}, status=status.HTTP_200_OK)
+        logger.error("Blank image filed is found on put request")
         return Response({'response_msg':'select a file'}, status=status.HTTP_400_BAD_REQUEST)
 
 
     def delete(self, request):
+        """
+        This API is used to delete current profile picture and reset to default
+        @return:
+        """
         image_name = request.user.profile.image.name
         if image_name != 'profile_pics/default.jpg':
             actual_path = os.path.join(os.getcwd(), 'media',image_name )
             os.remove(actual_path)
             request.user.profile.image = 'profile_pics/default.jpg'
             request.user.profile.save()
+            logger.info(f"{request.user.username}'s profile picture is deleted")
             return Response({'response_msg': "Profile picture is deleted"}, status=status.HTTP_200_OK)
+        logger.info("No profile picture is found to be deleted")
         return Response({'response_msg':'No image to be deleted'}, status=status.HTTP_400_BAD_REQUEST)
 
 
