@@ -109,7 +109,7 @@ class UserLogin(GenericAPIView):
                 if redirect_url:
                     logger(f'Redirects to {redirect_url}')
                     return redirect(redirect_url)
-                logger(f'Redirects to /notes/')
+                logger.info(f'Redirects to /notes/')
                 return redirect('/notes/')
             try:
                 user = User.objects.get(username=username)
@@ -166,7 +166,7 @@ class ForgotPassword(GenericAPIView):
             email_data = Email.configureResetPasswordMail(jwtToken, user, current_site, relative_url)
             Email.sendEmail(email_data)
             msg = 'Password reset link is sent to your mail.'
-            logger(f'password reset link is sent to {user.email}')
+            logger.info(f'password reset link is sent to {user.email}')
             return Response({'response_msg':msg, 'response_data':jwtToken}, status=status.HTTP_100_CONTINUE)
         logger.error(serializer.errors)
         return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
