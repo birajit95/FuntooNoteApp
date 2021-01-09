@@ -317,6 +317,9 @@ class UpdateProfilePictureAPI(GenericAPIView):
 class ChangePassword(GenericAPIView):
     serializer_class = ChangePasswordSerializer
     def put(self, request):
+        """
+        This API is used to change user password
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = User.objects.get(pk=request.user.pk)
@@ -324,7 +327,10 @@ class ChangePassword(GenericAPIView):
                 user.set_password(raw_password=serializer.data.get('password'))
                 user.save()
                 msg = "Your password is changed"
+                logger.info(f"{user.username}'s password changed")
                 return Response({'response_msg':msg}, status=status.HTTP_200_OK)
             msg = "Old password does not match!"
+            logger.warning(f"{user.username}'s old password does not match")
             return Response({'response_msg':msg}, status=status.HTTP_401_UNAUTHORIZED)
+        logger.error(serializer.errors)
         return Response({'msg': serializer.errors["non_field_errors"][0]}, status=status.HTTP_400_BAD_REQUEST)
