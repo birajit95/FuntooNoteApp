@@ -3,7 +3,6 @@ from rest_framework.views import APIView
 from .serialyzer import UserSerializer, ResetPasswordSerializer,\
     ForgotPasswordSerializer, UserLoginSerializer, UserProfileSerializer,\
     ChangePasswordSerializer, UserDataSerializer, UserProfileDataSerializer, UserProfilePicSerializer
-from rest_framework.renderers import JSONRenderer
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from .JWTAuthentication import JWTAuth
@@ -20,24 +19,34 @@ from django.utils.decorators import method_decorator
 import os
 from rest_framework import status
 from rest_framework.response import Response
+from FuntooNote.FuntooNote.logger import logger
 
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
     @swagger_auto_schema(responses={200: UserSerializer()})
     def post(self, request):
+        """
+        This api is for user registration to this application
+
+        @param request: user registration data like username, email, password, firstname, lastname
+        @return: account verification link to registered email once registration is successful
+        """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             user = User.objects.get(username=serializer.data.get('username'))
             user.is_active = False
             user.save()
+            logger.info(f"{user.username} is registered")
             jwtToken = JWTAuth.getToken(user.username, user.password)
             current_site = get_current_site(request).domain
             relative_url = 'user/verify-email/'
             email_data = Email.configureEmail(jwtToken, user, current_site, relative_url)
             Email.sendEmail(email_data)
-            msg= "data is created and a confirmation mail is sent to your mail"
+            logger.info(f'Account activation link is sent to {user.email}')
+            msg= "Your account is created and a confirmation mail is sent to your mail for account activation"
             return Response({'response_msg':msg, 'response_data':jwtToken},status = status.HTTP_201_CREATED)
+        logger.error(serializer.errors)
         return Response({'response_msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -48,6 +57,11 @@ class VerifyEmail(APIView):
     )
     @swagger_auto_schema(manual_parameters=[token])
     def get(self, request):
+        """
+        This Api verifies the user email and jwt token sent to the email and activates the account
+        @param request: Get request hits with jwt token which contains user information
+        @return: Account activation confirmation
+        """
         jwtToken = request.GET.get('token')
         try:
             blacklist_token = TokenBlackLists.objects.get(token=jwtToken)
@@ -57,6 +71,7 @@ class VerifyEmail(APIView):
             response = JWTAuth.verifyToken(jwtToken=jwtToken)
             if not response:
                 msg = 'Session for this token is expired!'
+                logger.info('token session expired!')
                 return Response({'response_msg':msg}, status=status.HTTP_401_UNAUTHORIZED)
             username = response.get('username')
             user = User.objects.get(username=username)
@@ -64,8 +79,10 @@ class VerifyEmail(APIView):
             user.save()
             TokenBlackLists(token=jwtToken).save()
             msg = 'Your account is activated! Now you can log in'
+            logger.info(f"{user.username}'s account is activated")
             return Response({'response_msg':msg}, status=status.HTTP_200_OK)
         msg = 'This link is no valid longer'
+        logger.info('This link is already used')
         return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
 
 class UserLogin(GenericAPIView):
