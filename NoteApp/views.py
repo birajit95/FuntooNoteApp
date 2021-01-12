@@ -101,6 +101,8 @@ class DeleteNotesAPI(GenericAPIView):
         """
         try:
             note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
+            cache = Cache.getCacheInstance()
+            cache.delete(f'Note-{note.id}')
             if note.is_trash:
                 note.delete()
                 logger.info("Note is deleted permanently")
@@ -279,7 +281,7 @@ class SearchNoteView(GenericAPIView):
             logger.info('Notes accessed from cache')
             return Response({'response_msg':datalist}, status=status.HTTP_200_OK)
         notes = Notes.objects.filter(Q(title__icontains=query) | Q(content__icontains=query)
-                                     | Q(color__icontains=query) & Q(user=request.user.pk))
+                                     | Q(color__icontains=query)).filter(user=request.user.pk, is_trash=False)
         serializer = self.serializer_class(notes,many=True)
         note_ids = []
         for note in notes:
