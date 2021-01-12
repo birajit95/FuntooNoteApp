@@ -1,7 +1,11 @@
 from .models import Notes, Label
 from rest_framework import serializers
 from django.db.models import Q
-
+import sys
+sys.path.append("..")
+from FuntooNote.redis_cache import Cache
+from datetime import timedelta
+import json
 
 class LabelAPISerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,6 +50,10 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
                 except Label.DoesNotExist:
                     note.delete()
                     raise serializers.ValidationError({'response_msg': f"{label['label_name']} label is not exist"})
+        cache = Cache.getCacheInstance()
+        print(RetriveAllNotesSerializer(note).data)
+        cache.hmset(f'Note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
+        cache.expire(f'Note-{note.id}', time=timedelta(days=3))
         return note
 
 class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
