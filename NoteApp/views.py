@@ -277,7 +277,7 @@ class SearchNoteView(GenericAPIView):
                     datalist.append(data)
         if cache_flag:
             logger.info('Notes accessed from cache')
-            return Response({'form_cache response_msg':datalist}, status=status.HTTP_200_OK)
+            return Response({'response_msg':datalist}, status=status.HTTP_200_OK)
         notes = Notes.objects.filter(Q(title__icontains=query) | Q(content__icontains=query)
                                      | Q(color__icontains=query) & Q(user=request.user.pk))
         serializer = self.serializer_class(notes,many=True)
