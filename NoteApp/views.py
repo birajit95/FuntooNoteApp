@@ -62,7 +62,7 @@ class UpdateNotesAPI(GenericAPIView):
         @return: updates the note
         """
         try:
-            note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
+            note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user) & Q(is_trash=False))
         except Notes.DoesNotExist:
             logger.warning("Note does not exist on update API hit")
             return Response({'msg': 'Your not authorised to access this data'},status=status.HTTP_401_UNAUTHORIZED)
@@ -86,6 +86,11 @@ class UpdateNotesAPI(GenericAPIView):
                         note.label.add(label_obj)
             note.save()
             logger.info("Note is updated")
+            cache = Cache.getCacheInstance()
+            cache.delete(f'Note-{note.id}')
+            cache.hmset(f'Note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
+            cache.expire(f'Note-{note.id}', time=timedelta(days=3))
+            logger.info("Note is updated in cache")
             return Response({'response_msg': 'Your note is Updated'}, status=status.HTTP_200_OK)
         logger.error(serializer.errors)
         return Response({'response_msg':serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
