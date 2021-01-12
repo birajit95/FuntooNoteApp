@@ -5,11 +5,16 @@ from django.db.models import Q
 from rest_framework import status
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-from datetime import datetime
+from datetime import datetime, timedelta
 from rest_framework.response import Response
 import sys
 sys.path.append("..")
 from FuntooNote.logger import logger
+from FuntooNote.redis_cache import Cache
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+import json
+
 
 @method_decorator(login_required(login_url='/user/login/'), name='dispatch')
 class AllNotesAPI(GenericAPIView):
@@ -242,3 +247,50 @@ class UnTrashNotesAPI(GenericAPIView):
             logger.info("Note does not exist")
             return Response({'response_msg': 'This Note is not exist'}, status=status.HTTP_404_NOT_FOUND)
 
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class SearchNoteView(GenericAPIView):
+    serializer_class = RetriveAllNotesSerializer
+    query = openapi.Parameter(
+        'query', in_=openapi.IN_QUERY, description='Description',
+        type=openapi.TYPE_STRING
+    )
+    @swagger_auto_schema(manual_parameters=[query])
+    def get(self, request):
+        """
+        This API is used to search notes by serch query
+        @param request: search query
+        @return: returns the note if match found
+        """
+        query = request.GET.get('query')
+        if not query:
+            logger.info('Query string is blank')
+            return Response({'response_msg':'Cant Process blank request'}, status=status.HTTP_400_BAD_REQUEST)
+        cache = Cache.getCacheInstance()
+        datalist = []
+        cache_flag = False
+        for key in cache.keys('*'):
+            if 'Note' in str(key):
+                data = json.loads(cache.hmget(name=key.decode('utf-8'), keys='noteObj')[0])
+                if query.lower() in data['title'].lower() or query.lower() in data['content'].lower() :
+                    cache_flag = True
+                    datalist.append(data)
+        if cache_flag:
+            logger.info('Notes accessed from cache')
+            return Response({'form_cache response_msg':datalist}, status=status.HTTP_200_OK)
+        notes = Notes.objects.filter(Q(title__icontains=query) | Q(content__icontains=query)
+                                     | Q(color__icontains=query) & Q(user=request.user.pk))
+        serializer = self.serializer_class(notes,many=True)
+        note_ids = []
+        for note in notes:
+            note_ids.append(note.id)
+        note_ids = iter(note_ids)
+        for note in serializer.data:
+            id_no = next(note_ids)
+            cache.hmset(f'Note-{id_no}',{'noteObj':json.dumps(note)})
+            cache.expire(f'Note-{id_no}',time=timedelta(days=3))
+        if len(serializer.data):
+            logger.info('Notes accessed from database')
+            return Response({'response_msg':serializer.data}, status=status.HTTP_200_OK)
+        logger.info('Search result not found')
+        return Response({'response_msg':'Search results not found'}, status=status.HTTP_404_NOT_FOUND)
