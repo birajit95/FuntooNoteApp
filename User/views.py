@@ -22,7 +22,9 @@ from rest_framework.response import Response
 import sys
 sys.path.append("..")
 from FuntooNote.logger import logger
+from .middlewares import CantAccessAfterLogin
 
+@method_decorator(CantAccessAfterLogin, name='dispatch')
 class UserRegistration(GenericAPIView):
     serializer_class =  UserSerializer
     @swagger_auto_schema(responses={200: UserSerializer()})
@@ -87,6 +89,7 @@ class VerifyEmail(APIView):
         logger.info('This link is already used')
         return Response({'response_msg':msg}, status=status.HTTP_403_FORBIDDEN)
 
+@method_decorator(CantAccessAfterLogin, name='dispatch')
 class UserLogin(GenericAPIView):
     serializer_class = UserLoginSerializer
     @swagger_auto_schema(responses={200: UserLoginSerializer()})
@@ -142,7 +145,7 @@ class UserLogOut(APIView):
         logger.info(f"{request.user.username} is logged out")
         return Response({'response_msg':msg},status=status.HTTP_204_NO_CONTENT)
 
-
+@method_decorator(CantAccessAfterLogin, name='dispatch')
 class ForgotPassword(GenericAPIView):
     serializer_class = ForgotPasswordSerializer
     @swagger_auto_schema(responses={200: ForgotPasswordSerializer()})
@@ -171,6 +174,7 @@ class ForgotPassword(GenericAPIView):
         logger.error(serializer.errors)
         return Response({'response_msg': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(CantAccessAfterLogin, name='dispatch')
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
     def get(self, request, uid, token):
