@@ -273,20 +273,27 @@ class SearchNoteView(GenericAPIView):
         if not query:
             logger.info('Query string is blank')
             return Response({'response_msg':'Cant Process blank request'}, status=status.HTTP_400_BAD_REQUEST)
+        querylist = query.split(' ')
         cache = Cache.getCacheInstance()
         datalist = []
         cache_flag = False
-        for key in cache.keys('*'):
-            if 'Note' in str(key):
+        for key in cache.keys('*'):                                         # checkig if data is available in cache
+            if f'user-{request.user.id}-note-' in str(key):
                 data = json.loads(cache.hmget(name=key.decode('utf-8'), keys='noteObj')[0])
-                if query.lower() in data['title'].lower() or query.lower() in data['content'].lower() :
-                    cache_flag = True
-                    datalist.append(data)
+                for query in querylist:
+                    if query.lower() in data['title'].lower() or query.lower() in data['content'].lower():
+                        cache_flag = True
+                        datalist.append(data)
+                    if cache_flag:
+                        break
         if cache_flag:
             logger.info('Notes accessed from cache')
             return Response({'response_msg':datalist}, status=status.HTTP_200_OK)
-        notes = Notes.objects.filter(Q(title__icontains=query) | Q(content__icontains=query)
-                                     | Q(color__icontains=query)).filter(user=request.user.pk, is_trash=False)
+        for query in querylist:
+            notes = Notes.objects.filter(Q(title__icontains=query) | Q(content__icontains=query)
+                                         | Q(color__icontains=query)).filter(user=request.user.pk, is_trash=False)
+            if len(notes):
+                break
         serializer = self.serializer_class(notes,many=True)
         note_ids = []
         for note in notes:
@@ -294,8 +301,8 @@ class SearchNoteView(GenericAPIView):
         note_ids = iter(note_ids)
         for note in serializer.data:
             id_no = next(note_ids)
-            cache.hmset(f'Note-{id_no}',{'noteObj':json.dumps(note)})
-            cache.expire(f'Note-{id_no}',time=timedelta(days=3))
+            cache.hmset(f'user-{request.user.id}-note-{id_no}',{'noteObj':json.dumps(note)})
+            cache.expire(f'user-{request.user.id}-note-{id_no}',time=timedelta(days=3))
         if len(serializer.data):
             logger.info('Notes accessed from database')
             return Response({'response_msg':serializer.data}, status=status.HTTP_200_OK)
