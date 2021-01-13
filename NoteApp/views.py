@@ -87,9 +87,9 @@ class UpdateNotesAPI(GenericAPIView):
             note.save()
             logger.info("Note is updated")
             cache = Cache.getCacheInstance()
-            cache.delete(f'Note-{note.id}')
-            cache.hmset(f'Note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
-            cache.expire(f'Note-{note.id}', time=timedelta(days=3))
+            cache.delete(f'user-{request.user.id}-note-{note.id}')
+            cache.hmset(f'user-{request.user.id}-note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
+            cache.expire(f'user-{request.user.id}-note-{note.id}', time=timedelta(days=3))
             logger.info("Note is updated in cache")
             return Response({'response_msg': 'Your note is Updated'}, status=status.HTTP_200_OK)
         logger.error(serializer.errors)
@@ -107,7 +107,7 @@ class DeleteNotesAPI(GenericAPIView):
         try:
             note = Notes.objects.get(Q(pk=note_id) & Q(user=request.user))
             cache = Cache.getCacheInstance()
-            cache.delete(f'Note-{note.id}')
+            cache.delete(f'user-{request.user.id}-note-{note.id}')
             if note.is_trash:
                 note.delete()
                 logger.info("Note is deleted permanently")

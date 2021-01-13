@@ -51,8 +51,8 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
                     note.delete()
                     raise serializers.ValidationError({'response_msg': f"{label['label_name']} label is not exist"})
         cache = Cache.getCacheInstance()
-        cache.hmset(f'Note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
-        cache.expire(f'Note-{note.id}', time=timedelta(days=3))
+        cache.hmset(f'user-{note.user.id}-note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
+        cache.expire(f'user-{note.user.id}-note-{note.id}', time=timedelta(days=3))
         return note
 
 class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
