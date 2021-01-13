@@ -5,7 +5,7 @@ from colorful.fields import RGBColorField
 
 class Label(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    label_name = models.CharField(max_length=20, unique=True)
+    label_name = models.CharField(max_length=20, unique=False)
 
     def __str__(self):
         return self.label_name
