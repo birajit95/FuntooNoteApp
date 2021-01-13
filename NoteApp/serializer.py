@@ -11,7 +11,12 @@ class LabelAPISerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
         fields = ['label_name']
-
+    def validate(self, data):
+        try:
+            Label.objects.get(label_name=data['label_name'], user=self.context.get('user').pk)
+            raise serializers.ValidationError("Label is already exist")
+        except Label.DoesNotExist:
+            return data
 
 class RetriveAllNotesSerializer(serializers.ModelSerializer):
     label = LabelAPISerializer(many=True)

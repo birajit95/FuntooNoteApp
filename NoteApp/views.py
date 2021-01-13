@@ -131,7 +131,7 @@ class AddLabelAPI(GenericAPIView):
         @param request: label name
         @return: Creates label
         """
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={'user':request.user})
         if serializer.is_valid():
             Label(user=request.user, label_name=serializer.data.get('label_name')).save()
             logger.info("label created")
