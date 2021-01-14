@@ -24,11 +24,12 @@ class AllNotesAPI(GenericAPIView):
         This API is used to fetch all notes of the user
         @return: returns all notes
         """
-        allNotes = Notes.objects.filter(Q(is_archive=False) & Q(user=request.user.pk) & Q(is_trash=False))
+        allNotes = Notes.objects.filter(is_archive=False , is_trash=False)\
+            .filter(Q(user=request.user.pk) | Q(collaborators__icontains=request.user.email))
         if not allNotes:
             logger.info(f"{request.user.username}'s no notes present")
             return Response({'response_data': 'No notes available'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(allNotes, many=True)
+        serializer = self.serializer_class(allNotes, many=True, context={'email':request.user.email})
         logger.info(f"{request.user.username}'s all notes accessed")
         return Response({'response_data':serializer.data}, status=status.HTTP_200_OK)
 
