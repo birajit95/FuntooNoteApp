@@ -72,6 +72,7 @@ class UpdateNotesAPI(GenericAPIView):
             note.title = serializer.data.get('title')
             note.content = serializer.data.get('content')
             note.color = serializer.data.get('color')
+            collabortors = serializer.data.get('collaborators')
             if serializer.data.get('label'):
                 for label in serializer.data.get('label'):
                     try:
@@ -84,6 +85,11 @@ class UpdateNotesAPI(GenericAPIView):
                 for label in serializer.data.get('label'):
                         label_obj = Label.objects.get(Q(label_name=label['label_name']) & Q(user=request.user))
                         note.label.add(label_obj)
+            note.collaborators.pop('owner')
+            note.collaborators.pop('collaborators')
+            if collabortors:
+                collaborators_json = {'owner':request.user.email,'collaborators':collabortors}
+                note.collaborators=collaborators_json
             note.save()
             logger.info("Note is updated")
             cache = Cache.getCacheInstance()
