@@ -223,6 +223,8 @@ class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
                     note.collaborators = collaborators_json
                 note.save()
                 note.label.add(label)
+                cache = Cache.getCacheInstance()
+                cache.hmset(f'user-{request.user.id}-note-{note.id}',{'noteObj':json.dumps(RetriveAllNotesSerializer(note).data)})
                 logger.info(f"Note is saved")
                 return Response({'response_msg':'Your note is saved'}, status=status.HTTP_201_CREATED)
             except Label.DoesNotExist:
