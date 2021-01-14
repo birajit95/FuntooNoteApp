@@ -6,6 +6,7 @@ sys.path.append("..")
 from FuntooNote.redis_cache import Cache
 from datetime import timedelta
 import json
+from django.contrib.auth.models import User
 
 class LabelAPISerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,7 +23,7 @@ class RetriveAllNotesSerializer(serializers.ModelSerializer):
     label = LabelAPISerializer(many=True)
     class Meta:
         model = Notes
-        fields = ['title', 'content', 'date', 'label','last_updated', 'color']
+        fields = ['title', 'content', 'date', 'label','last_updated', 'color','collaborators']
 
 class LabelSerializer(serializers.Serializer):
     label_name = serializers.CharField(max_length=30, allow_blank=True, allow_null=True)
@@ -30,19 +31,27 @@ class LabelSerializer(serializers.Serializer):
 
 class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
     label = LabelSerializer(many=True, required=False, default=None)
+    collaborators = serializers.ListField(required=False, default=None)
     class Meta:
         model = Notes
-        fields = ['title', 'content', 'label', 'color']
+        fields = ['title', 'content', 'label', 'color','collaborators']
 
     def validate(self, data):
         if not data.get('label'):
             data['label'] = None
         if len(data.get('title')) < 2 or len(data.get('content')) < 2 :
             raise serializers.ValidationError('Too Short Notes Title or Content')
+        if data.get('collaborators'):
+            for email in data.get('collaborators'):
+                try:
+                    User.objects.get(email=email)
+                except User.DoesNotExist:
+                    raise serializers.ValidationError(f"{email} not found")
         return data
 
     def create(self, validated_data):
         label_data = validated_data.pop('label')
+        collaborators = validated_data.pop('collaborators')
         validated_data['user'] = self.context['user']
         note = Notes.objects.create(**validated_data)
         if label_data:
@@ -55,6 +64,10 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
                 except Label.DoesNotExist:
                     note.delete()
                     raise serializers.ValidationError({'response_msg': f"{label['label_name']} label is not exist"})
+        collaborators_data = {'ownner':note.user.email, 'collaborators':collaborators}
+        collaborators = collaborators_data
+        note.collaborators=collaborators
+        note.save()
         cache = Cache.getCacheInstance()
         cache.hmset(f'user-{note.user.id}-note-{note.id}', {'noteObj': json.dumps(RetriveAllNotesSerializer(note).data)})
         cache.expire(f'user-{note.user.id}-note-{note.id}', time=timedelta(days=3))
