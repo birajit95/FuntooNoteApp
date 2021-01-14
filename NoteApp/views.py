@@ -217,6 +217,10 @@ class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
                 label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
                 note = Notes(user=request.user, title=serializer.data.get('title'),
                              content=serializer.data.get('content'),color=serializer.data.get('color'))
+                collaborators = serializer.data.get('collaborators')
+                if collaborators:
+                    collaborators_json = {'owner':request.user.email, 'collaborators':collaborators}
+                    note.collaborators = collaborators_json
                 note.save()
                 note.label.add(label)
                 logger.info(f"Note is saved")

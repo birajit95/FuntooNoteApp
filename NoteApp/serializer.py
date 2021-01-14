@@ -74,11 +74,18 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
         return note
 
 class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
+    collaborators = serializers.ListField(required=False, default=None)
     class Meta:
         model = Notes
-        fields = ['title','content','color']
+        fields = ['title','content','color','collaborators']
 
     def validate(self, data):
         if len(data.get('title')) < 2 or len(data.get('content')) < 2 :
             raise serializers.ValidationError('Too Short Notes Title or Content')
+        if data.get('collaborators'):
+            for email in data.get('collaborators'):
+                try:
+                    User.objects.get(email=email)
+                except User.DoesNotExist:
+                    raise serializers.ValidationError(f"{email} not found")
         return data
