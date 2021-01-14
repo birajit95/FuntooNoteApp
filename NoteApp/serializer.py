@@ -64,7 +64,7 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
                 except Label.DoesNotExist:
                     note.delete()
                     raise serializers.ValidationError({'response_msg': f"{label['label_name']} label is not exist"})
-        collaborators_data = {'ownner':note.user.email, 'collaborators':collaborators}
+        collaborators_data = {'owner':note.user.email, 'collaborators':collaborators}
         collaborators = collaborators_data
         note.collaborators=collaborators
         note.save()
