@@ -80,13 +80,14 @@ class UpdateNotesAPI(GenericAPIView):
                     except Label.DoesNotExist:
                         logger.warning(f"{label['label_name']} does not exist")
                         return Response({'response_msg': 'This label is not exist'}, status=status.HTTP_404_NOT_FOUND)
-                note.label.clear()
+            note.label.clear()
             if serializer.data.get('label'):
                 for label in serializer.data.get('label'):
                         label_obj = Label.objects.get(Q(label_name=label['label_name']) & Q(user=request.user))
                         note.label.add(label_obj)
-            note.collaborators.pop('owner')
-            note.collaborators.pop('collaborators')
+            if note.collaborators:
+                note.collaborators.pop('owner')
+                note.collaborators.pop('collaborators')
             if collabortors:
                 collaborators_json = {'owner':request.user.email,'collaborators':collabortors}
                 note.collaborators=collaborators_json
