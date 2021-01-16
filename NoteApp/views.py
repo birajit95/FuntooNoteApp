@@ -322,3 +322,27 @@ class SearchNoteView(GenericAPIView):
             return Response({'response_msg':serializer.data}, status=status.HTTP_200_OK)
         logger.info('Search result not found')
         return Response({'response_msg':'Search results not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class RemoveSelfEmailByCollaborator(GenericAPIView):
+    def delete(self, request, note_id):
+        """
+        This API is used to delete collaborator's self email from collaborator list
+        @param note_id: specific note id
+        @return: deletes collaborator's self email from collaborator list
+        """
+        try:
+            note = Notes.objects.get(id=note_id)
+            if request.user.email in note.collaborators['collaborators']:
+                note.collaborators['collaborators'].remove(request.user.email)
+                if not len(note.collaborators['collaborators']):
+                    note.collaborators = None
+                note.save()
+                logger.info('collaborator removes self email')
+                return Response({'response_msg':"You have removed yourself from the collaborator"}, status=status.HTTP_200_OK)
+            logger.warning('unauthorised access to delete collaborator self email')
+            return Response({'response_msg': "Unauthorised access"},status=status.HTTP_401_UNAUTHORIZED)
+        except Notes.DoesNotExist:
+            logger.info('note is not found')
+            return Response({'response_msg':'Note not found'}, status=status.HTTP_404_NOT_FOUND)
+
