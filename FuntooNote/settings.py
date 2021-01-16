@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'NoteApp.apps.NoteappConfig',
-    'colorful'
+    'colorful',
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -147,3 +149,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get('mail_username')
 EMAIL_HOST_PASSWORD = os.environ.get('mail_password')
+
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
