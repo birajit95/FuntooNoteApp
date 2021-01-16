@@ -1,4 +1,4 @@
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, post_save
 from django.contrib.auth.models import User
 import sys
 sys.path.append('..')
@@ -8,6 +8,7 @@ from django.dispatch import  receiver
 import json
 from FuntooNote.redis_cache import Cache
 from datetime import timedelta
+from .models import Profile
 
 @receiver(post_delete, sender=User)
 def delete_user_signal(sender, instance, using, **kwargs):
@@ -23,4 +24,13 @@ def delete_user_signal(sender, instance, using, **kwargs):
                 cache.expire(f"user-{notes[note_index].user.id}-note-{notes[note_index].id}",time=timedelta(days=3))
 
 
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
