@@ -110,7 +110,7 @@ class UserLogin(GenericAPIView):
                 logger.info(f"{username} is logged in")
                 redirect_url = request.GET.get('next')
                 if redirect_url:
-                    logger(f'Redirects to {redirect_url}')
+                    logger.info(f'Redirects to {redirect_url}')
                     return redirect(redirect_url)
                 logger.info(f'Redirects to /notes/')
                 return redirect('/notes/')
