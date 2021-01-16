@@ -19,6 +19,8 @@ def delete_user_signal(sender, instance, using, **kwargs):
         for index,email in enumerate(json.loads(json.dumps(note))["collaborators"].get('collaborators')):
             if email == instance.email:
                 notes[note_index].collaborators['collaborators'].pop(index)
+                if not len(notes[note_index].collaborators['collaborators']):
+                    notes[note_index].collaborators = None
                 notes[note_index].save()
                 cache.hmset(f"user-{notes[note_index].user.id}-note-{notes[note_index].id}",{"noteObj":json.dumps(note)})
                 cache.expire(f"user-{notes[note_index].user.id}-note-{notes[note_index].id}",time=timedelta(days=3))
