@@ -122,6 +122,7 @@ class DeleteNotesAPI(GenericAPIView):
                 return Response({'response_msg': 'Your Note is deleted permanently'}, status=status.HTTP_200_OK)
             else:
                 note.is_trash = True
+                note.trashed_time = datetime.now()
                 note.save()
                 logger.info("Note is Trashed")
                 return Response({'response_msg': 'Your Note is trashed'}, status=status.HTTP_200_OK)
