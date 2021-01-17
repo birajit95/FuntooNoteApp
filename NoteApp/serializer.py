@@ -43,6 +43,8 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Too Short Notes Title or Content')
         if data.get('collaborators'):
             for email in data.get('collaborators'):
+                if data['collaborators'].count(email) > 1:
+                    raise serializers.ValidationError(f"'{email}' duplicate email found")
                 try:
                     user = User.objects.get(email=email)
                     if user.email == self.context['user'].email:
@@ -86,8 +88,12 @@ class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Too Short Notes Title or Content')
         if data.get('collaborators'):
             for email in data.get('collaborators'):
+                if data['collaborators'].count(email) > 1:
+                    raise serializers.ValidationError(f"'{email}' duplicate email found")
                 try:
-                    User.objects.get(email=email)
+                    user = User.objects.get(email=email)
+                    if user.email == self.context['email']:
+                        raise serializers.ValidationError('email already exists')
                 except User.DoesNotExist:
                     raise serializers.ValidationError(f"{email} not found")
         return data

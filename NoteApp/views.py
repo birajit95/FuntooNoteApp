@@ -67,7 +67,7 @@ class UpdateNotesAPI(GenericAPIView):
         except Notes.DoesNotExist:
             logger.warning("Note does not exist on update API hit")
             return Response({'msg': 'Your not authorised to access this data'},status=status.HTTP_401_UNAUTHORIZED)
-        serializer = self.serializer_class(data=request.data, partial=True)
+        serializer = self.serializer_class(data=request.data, partial=True, context={'user':request.user})
         if serializer.is_valid():
             note.last_updated = datetime.now()
             note.title = serializer.data.get('title')
@@ -212,7 +212,7 @@ class AddAndRetrieveNotesForSpecificLabelAPI(GenericAPIView):
         @param label_name: existing specific label name
         @return: creates note for this specific label
         """
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={'email':request.user.email})
         if serializer.is_valid():
             try:
                 label = Label.objects.get(Q(label_name=label_name) & Q(user_id=request.user.pk))
