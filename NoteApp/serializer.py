@@ -44,7 +44,9 @@ class AddOrUpdateNotesAPISerializer(serializers.ModelSerializer):
         if data.get('collaborators'):
             for email in data.get('collaborators'):
                 try:
-                    User.objects.get(email=email)
+                    user = User.objects.get(email=email)
+                    if user.email == self.context['user'].email:
+                        raise serializers.ValidationError('email already exists')
                 except User.DoesNotExist:
                     raise serializers.ValidationError(f"{email} not found")
         return data
