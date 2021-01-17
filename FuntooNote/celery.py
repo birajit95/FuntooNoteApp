@@ -13,10 +13,9 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    'every-5-seconds':{
-        'task':'NoteApp.tasks.send_email',
-        'schedule':5,
-
+    'every-day':{
+        'task':'NoteApp.tasks.delete_trashed_note',
+        'schedule':24*60*60,
     }
 }
 
