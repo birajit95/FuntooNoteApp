@@ -23,9 +23,15 @@ class Notes(models.Model):
     color = RGBColorField(colors=['#FF0000', '#00FF00', '#0000FF'], null=True, blank=True)
     collaborators = JSONField(null=True, blank=True)
     trashed_time = models.DateTimeField(default=None, blank=True, null=True)
+    reminder = models.DateTimeField(default=None, blank=True, null=True)
 
     class Meta:
         ordering = ['-date']
 
     def __str__(self):
         return f"{self.title}   ({self.pk})"
+
+class ReminderNotes(Notes):
+    class Meta:
+        proxy = True
+        ordering = ('reminder',)

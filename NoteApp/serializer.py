@@ -4,7 +4,7 @@ from django.db.models import Q
 import sys
 sys.path.append("..")
 from FuntooNote.redis_cache import Cache
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 from django.contrib.auth.models import User
 
@@ -23,7 +23,7 @@ class RetriveAllNotesSerializer(serializers.ModelSerializer):
     label = LabelAPISerializer(many=True)
     class Meta:
         model = Notes
-        fields = ['title', 'content', 'date', 'label','last_updated', 'color','collaborators']
+        fields = ['title', 'content', 'date', 'label','last_updated', 'color','collaborators','reminder']
 
 class LabelSerializer(serializers.Serializer):
     label_name = serializers.CharField(max_length=30, allow_blank=True, allow_null=True)
@@ -97,3 +97,13 @@ class AddNotesForSpecificLabelSerializer(serializers.ModelSerializer):
                 except User.DoesNotExist:
                     raise serializers.ValidationError(f"{email} not found")
         return data
+
+class ReminderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
+        fields = ['reminder']
+
+    def validate_reminder(self, time):
+        if time.replace(tzinfo=None) - datetime.now() < timedelta(seconds=0):
+            raise serializers.ValidationError('Invalid reminder time')
+        return time

@@ -1,6 +1,7 @@
 from rest_framework.generics import GenericAPIView
-from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, LabelAPISerializer, AddNotesForSpecificLabelSerializer
-from .models import Notes, Label
+from .serializer import RetriveAllNotesSerializer, AddOrUpdateNotesAPISerializer, LabelAPISerializer, \
+    AddNotesForSpecificLabelSerializer, ReminderSerializer
+from .models import Notes, Label, ReminderNotes
 from django.db.models import Q
 from rest_framework import status
 from django.utils.decorators import method_decorator
@@ -346,4 +347,60 @@ class RemoveSelfEmailByCollaborator(GenericAPIView):
         except Notes.DoesNotExist:
             logger.info('note is not found')
             return Response({'response_msg':'Note not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@method_decorator(login_required(login_url='/user/login/'), name='dispatch')
+class ReminderAddUpdateAPIView(GenericAPIView):
+    serializer_class = ReminderSerializer
+
+    def patch(self, request, note_id):
+        """
+        This API is used to set reminder
+        @param note_id: primary_key of specific note
+        @return: sets reminder
+        """
+        try:
+            note = Notes.objects.get(id=note_id, user=request.user.id)
+        except Notes.DoesNotExist:
+            logger.info('Note not found')
+            return Response({'response_msg':'Note Not Found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(data=request.data, initial=note, partial=True)
+        serializer.is_valid(raise_exception=True)
+        note.reminder = serializer.data.get('reminder')
+        note.save()
+        logger.info('Reminder is set')
+        return Response({'response_msg':'Reminder is set'}, status=status.HTTP_200_OK)
+
+    def delete(self, request, note_id):
+        """
+            This API is used to remove reminder
+            @param note_id: primary_key of specific note
+            @return: removes reminder
+        """
+        try:
+            note = Notes.objects.get(id=note_id, user=request.user.id)
+        except Notes.DoesNotExist:
+            logger.info('Note not found')
+            return Response({'response_msg':'Note Not Found'}, status=status.HTTP_404_NOT_FOUND)
+        note.reminder = None
+        note.save()
+        logger.info('Reminder is removed')
+        return Response({'response_msg':'Reminder is removed'}, status=status.HTTP_200_OK)
+
+class ReminderGetAPIView(GenericAPIView):
+    serializer_class = RetriveAllNotesSerializer
+
+    def get(self, request):
+        """
+            This API is used to fetch all notes of the user
+            @return: returns all notes
+        """
+        Reminder_Notes = ReminderNotes.objects.filter(is_trash=False).\
+            filter(Q(user=request.user.pk) | Q(collaborators__icontains=request.user.email)).exclude(reminder=None)
+        if not Reminder_Notes:
+            logger.info(f"{request.user.username}'s no notes present")
+            return Response({'response_data': 'No reminder notes available'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(Reminder_Notes, many=True, context={'email': request.user.email})
+        logger.info(f"{request.user.username}'s reminder notes accessed")
+        return Response({'response_data': serializer.data}, status=status.HTTP_200_OK)
+
 
