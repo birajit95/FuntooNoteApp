@@ -391,7 +391,7 @@ class ReminderGetAPIView(GenericAPIView):
 
     def get(self, request):
         """
-            This API is used to fetch all notes of the user
+            This API is used to fetch all reminder notes of the user
             @return: returns all notes
         """
         Reminder_Notes = ReminderNotes.objects.filter(is_trash=False).\
