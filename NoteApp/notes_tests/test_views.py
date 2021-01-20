@@ -4,7 +4,7 @@ from ..models import Label, Notes
 from django.urls import reverse
 from rest_framework import status
 import json
-
+from datetime import datetime, timedelta
 
 class TestNotesAPIs(TestCase):
     def setUp(self):
@@ -458,3 +458,34 @@ class TestNotesAPIs(TestCase):
         }
         response = self.client.post(reverse('addNote'), data=json.dumps(valid_payload_1), content_type='application/json')
         self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # Test cases for reminder
+    def test_add_reminder_when_valid_reminder_time_is_given(self):
+        note_id = self.addNote(title="Hello", content="Python", label_name="Google", user=self.user_1)
+        self.user_login(user=self.user_1)
+        data = {
+            'reminder':datetime.now()+timedelta(minutes=1)
+        }
+        response = self.client.patch(reverse('noteReminder',args=[note_id]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data['response_msg'],'Reminder is set')
+
+    def test_add_reminder_when_invalid_reminder_time_is_given(self):
+        note_id = self.addNote(title="Hello", content="Python", label_name="Google", user=self.user_1)
+        self.user_login(user=self.user_1)
+        data = {
+            'reminder':datetime.now() - timedelta(minutes=1)
+        }
+        response = self.client.patch(reverse('noteReminder',args=[note_id]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_reminder(self):
+        note_id = self.addNote(title="Hello", content="Python", label_name="Google", user=self.user_1)
+        self.user_login(user=self.user_1)
+        data = {
+            'reminder': datetime.now() + timedelta(minutes=1)
+        }
+        self.client.patch(reverse('noteReminder', args=[note_id]), data=data,
+                                     content_type='application/json')
+        response = self.client.delete(reverse('noteReminder',args=[note_id]))
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
