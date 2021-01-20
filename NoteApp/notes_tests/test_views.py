@@ -395,3 +395,66 @@ class TestNotesAPIs(TestCase):
        response = self.client.patch(reverse('unTrashNotes',args=[note_id]))
        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
        self.assertEquals(response.url, f'/user/login/?next=/notes/un-trash/{note_id}/')
+
+    # Test cases for collaborators
+    def test_add_note_when_one_collaborator_is_given(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Google")
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Google'
+            }],
+            'color': '#FF5733',
+            'collaborators':['aryan95@gmail.com']
+        }
+        response = self.client.post(reverse('addNote'), data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+        self.assertEquals(response.data['response_msg'], 'Your note is saved')
+
+    def test_add_note_when_two_collaborators_are_given(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Google")
+        User.objects.create_user(username='biru78',email='birumnna@gmail.com',password='123456')
+
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Google'
+            }],
+            'color': '#FF5733',
+            'collaborators':['aryan95@gmail.com','birumnna@gmail.com']
+        }
+        response = self.client.post(reverse('addNote'), data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+        self.assertEquals(response.data['response_msg'],'Your note is saved')
+
+    def test_add_note_when_two_same_collaborators_are_given(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Google")
+
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Google'
+            }],
+            'color': '#FF5733',
+            'collaborators':['aryan95@gmail.com','aryan95@gmail.com']
+        }
+        response = self.client.post(reverse('addNote'), data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_add_note_when_owner_email_is_given_in_collaborators(self):
+        self.test_add_label_when_user_is_logged_in(label_name="Google")
+
+        valid_payload_1 = {
+            'title': 'Hello',
+            'content': 'world',
+            'label': [{
+                'label_name': 'Google'
+            }],
+            'color': '#FF5733',
+            'collaborators':['birajit95@gmail.com']
+        }
+        response = self.client.post(reverse('addNote'), data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
