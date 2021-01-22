@@ -1,8 +1,8 @@
-# **FundooNotes (Google Keep Backend clone)**
+# **FundooNotes (similar as Google Keep Backend)**
 <br>
 
 ## **Description**
->### This project is is developed as an clone of **[Google Keep](https://keep.google.com/)** aplication's backend
+>### This project's backend is developed as similar of **[Google Keep](https://keep.google.com/)** aplication's backend
 
 >### There are 2 applications in this project
 >1. User Application
@@ -106,10 +106,10 @@
 
 ### **Installing packages**
 ```
-    pip install requirements.txt
+    pip install -r requirements.txt
 ```
 ### **Other Dependencies**
-* PostgresSQL
+* **PostgresSQL**
 > * PostgresSQL is the database used in this project
 >* Postgres Download link https://www.postgresql.org/download/
 >* pgAdmin download link https://www.pgadmin.org/download/
@@ -128,20 +128,147 @@ DATABASES = {
 }
 ```
 
-* Redis
+ * **Redis**
 >* Redis is an in memory database which is used as cache memory in this project for fast accessing data
 >* Redis download link https://redis.io/download
+>* Configuring redis :-
+> Create a file name as cache.py and use the following singleton class configuration
+```python
+import redis
+class Cache: 
+    obj = None
+    @staticmethod
+    def getCacheInstance():
+        if Cache.obj is None:
+            Cache.obj = redis.Redis(host='hostname', port=6379)
+        return Cache.obj
+
+```
+>* now call the getCachefunction any where and use the cache object
 * Celery
 >* Celery is used to perform Asynchronised task in django. There might be some cases where synchronised tasks are not feasible like checking reminders, sending emails which is an heavey task, so in such situation we have used celery in this project.
+>* Configuration of Celery :-
+>* In settings.py add
+```python
+        CELERY_BROKER_URL = 'broker_url'
+        CELERY_RESULT_BACKEND = 'django-db'
+        CELERY_CACHE_BACKEND = 'django-cache'
+```
+>* In project directory create a new file named celery.py and add the following code :-
+```python
+      import os
+      from celery import Celery
+
+      os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project_name.settings')
+
+      app = Celery('project_name')
+      app.config_from_object('django.conf:settings', namespace='CELERY')
+      app.autodiscover_tasks()
+      app.conf.beat_schedule = {
+          'triggering' : {
+              'task': 'Notes.tasks.task_name',
+              'schedule': 'time_duration',
+              'args': 'optional'
+          }
+      }
+```
+>* Add the following code in __init__.py of project directory :-
+```python
+        from .celery import app as celery_app
+        __all__ = ['celery_app']
+```
+>* Create a file named tasks.py inside an app directory and put all our Celery tasks into this file. Following is a demo structure..
+```python
+        from celery import shared_task
+
+        @shared_task
+        def function_name(optional_param):
+          # do some asynchronous task
+```
+>* Now start 2 servers.
+>* 1st one is for worker and 2nd one is for beat
+>* This 2 commands should be executed in 2 different terminals separately
+```python
+        celery -A project_name worker -l info
+        celery -A project_name beat -l info
+```
 * RabbitMQ
 >* RabbitMQ is a massage broker which is used here to keep the celery tasks in its Queue
->* RabbitMQ Download link https://www.rabbitmq.com/download.html
+>* Here we need to install erlang before rabbitMQ and then install rabbitMQ
+>* erlang Download link : https://erlang.org/download/otp_versions_tree.html
+>* RabbitMQ download link : https://www.rabbitmq.com/install-windows.html
+>* Now enable the rabbitMQ management using the following command in terminal
+```bash
+    rabbitmq-plugins enable rabbitmq_management
+```
+>* Now access the server on  http://localhost:15672
+>* use basic credential, username: guest and pass: guest
+
 * SonarQube
 >* SonarQube is an analytical tool which analyses the whole project and comes up the analysis results like is there any **errors**, **bugs**, **security hotspots** or **duplicay** found in code.
->* SonarQube download link https://docs.sonarqube.org/latest/setup/install-server/
+>* SonarQube download link :  https://www.sonarqube.org/downloads/
+>* Now unzip the file and configure the following file inside conf directory
+>* In sonar.properties file(example for postgresSQL) :-
+```properties
+    sonar.jdbc.username=db_user_name
+    sonar.jdbc.password=db_password
+    sonar.embeddedDatabase.port=9092
+    sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?currentSchema=my_schema
+    sonar.web.host=127.0.0.1
+    sonar.web.context=
+    sonar.web.port=9000(default)
+```
+>* In wrapper.conf file :-
+```conf
+    wrapper.java.command=/path/to/my/jdk/bin/java
+```
+
+>* Execute the following script to start the server
+```
+On Linux: bin/linux-x86-64/sonar.sh start
+On macOS: bin/macosx-universal-64/sonar.sh start
+On Windows: bin/windows-x86-64/StartSonar.bat We can now browse SonarQube at http://localhost:9000 (the default System administrator credentials are admin/admin).
+```
+
+>* After server is up and running, we'll need to install one or more SonarScanners on the machine where analysis will be performed.
+Use this link to download: https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/
+To run SonarScanner from the zip file, follow these steps:
+
+>* Expand the downloaded file into the directory of your choice. We'll refer to it as $install_directory in the next steps.
+
+>* Update the global settings to point to your SonarQube server by editing $install_directory/conf/sonar-scanner.properties:
+```properties
+     sonar.host.url=http://localhost:9000
+```
+>* Add the $install_directory/bin directory to your path.
+
+>* Verify installation by opening a new shell and executing the command sonar-scanner -h (sonar-scanner.bat -h on Windows). Output soulbe be like this:
+```
+      usage: sonar-scanner [options]
+      Options:
+      -D,--define <arg>     Define property
+      -h,--help             Display help information
+      -v,--version          Display version information
+      -X,--debug            Produce execution debug output
+```
+>* Create a configuration file in your project's root directory called sonar-project.properties:
+```properties
+      sonar.projectKey=my:project
+      sonar.projectName=My project
+      sonar.projectVersion=1.0
+      sonar.sources=.
+      sonar.sourceEncoding=UTF-8
+```
+
+>* **Launching the project**:
+>* Give a project on the server
+>* Generate a token
+>* Run the following command from the project base directory to launch analysis and pass your authentication token:
+```bash
+    sonar-scanner -Dsonar.login=myAuthenticationToken
+```
+>* Now access the server at http://localhost:9000
 ## **Contribution**
 > When contributing to this repository, please first discuss the change you wish to make via issue, email, or any other method with the owners(**[Birajit Nath](birajit95@gmail.com)**) of this repository before making a change
 ## **Author**
 > #### Birajit Nath
-## **Licence**
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)]()
