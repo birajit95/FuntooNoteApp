@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from datetime import datetime
 from colorful.fields import RGBColorField
 from django.contrib.postgres.fields import JSONField
+from django.utils.timezone import now
+
 
 class Label(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -15,7 +17,7 @@ class Notes(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=500)
-    date = models.DateTimeField(default = datetime.now())
+    date = models.DateTimeField(default = now)
     label = models.ManyToManyField(to=Label)
     is_archive = models.BooleanField(default=False)
     is_trash = models.BooleanField(default=False)

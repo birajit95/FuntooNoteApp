@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
 from PIL import Image
+from django.utils.timezone import now
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -19,4 +20,4 @@ class Profile(models.Model):
 
 class TokenBlackLists(models.Model):
     token = models.CharField(max_length=500)
-    datetime = models.DateTimeField(default=datetime.now())
+    datetime = models.DateTimeField(default=now)
