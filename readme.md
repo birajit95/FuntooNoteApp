@@ -268,6 +268,324 @@ To run SonarScanner from the zip file, follow these steps:
     sonar-scanner -Dsonar.login=myAuthenticationToken
 ```
 >* Now access the server at http://localhost:9000
+
+<br><br>
+
+# FundooNotes Production Documentation
+## Django Application deployment on AWS EC2 Instance
+> **Creating Server** :
+>* Create a EC2 instance on aws.
+>* Select ubuntu 18.04 server.
+>* Launch the server.
+>* Connect to that instance using .pem file
+>* Run the following command on terminal
+```bash
+ ssh -i "secret_key.pem" ubuntu@server_dns
+```
+            - Now update and upgrade the server - 
+>* Use the following commads 
+```bash
+    sudo apt-get update
+    sudo apt-get upgrate
+```
+> **Servers requeirements**: 
+>* We need two softwares to serve django project:
+>*    - Nginx : Actual server to host the Appliction. Django uses the python built-in HTTP server for hosting.
+>*    -  Wsgi interface : It acts like a link between nginx server and the application using the mechanism called a unique socket. 
+>*   - Unique socket is a mechanism to achieve interprocess communication between two applications.
+>* - Gunicorn wsgi interface - The Gunicorn "Green Unicorn" is a Python Web Server Gateway Interface HTTP server.
+
+>* Install python and download venv for the virtual environment.
+>* Create a virtual environment and activate it.
+>* Install all requirements.
+>* Install django :
+```bash
+        pip3 install django
+```
+>* Clone your project from the git main branch.
+>* Install gunicorn : 
+```bash
+        pip3 install gunicorn
+```
+>* Install nginx from ubuntu repo : 
+```bash
+        sudo apt-get install -y nginx
+```
+>* Change the security group to allow TCP & HTTP traffic.
+>* Got to security groups>inbound rule>Add HTTP>Allow from anywhere>save
+>* Now check the server. It has started. It shows the welcome message for nginx.
+
+
+> **Gunicorn connection** : 
+>* - Go to project root. There is a wsgi.py file to connect gunicorn to django applications.
+>* - We need to tell gunicorn to use this file to serve applications instead of python builtin HTTP.
+>* - Command to connect gunicorn :- 
+```bash
+         gunicorn --bind 0.0.0.0:8000 fundooNote.wsgi:application
+```
+>* - Add a security rule for port - 8000 and run the server. Now we can see our application using the public ip with port 8000
+
+<br>
+
+> **Supervisor**
+>* If we close the terminal the server stops so we have to set a supervisor. It makes sure that the process our application is always running in the background. It will always run gunicorn in the background.
+>*  - Installation Command -
+```bash
+            sudo apt-get install -y supervisor
+```
+>*  - We have to create a configuration so that the supervisor can read to start or restart the application.
+>*  - Path to conf file is - cd /etc/supervisor/conf.d/
+>* - -  Create a gunicorn.conf file here with following script
+```bash
+[program:gunicorn]
+directory=/home/ubuntu/FuntooNoteApp
+command=/home/ubuntu/env/bin/gunicorn --workers 3 --bind unix:/home/ubuntu/FuntooNoteApp/app.sock FuntooNote.wsgi:application
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/gunicorn/gunicorn.err.log
+stdout_logfile=/var/log/gunicorn/gunicorn.out.log
+
+```
+
+>* Now we can use this following command to tell the
+supervisor to read the gunicorn file.
+>* Create a folder at given path in the command:
+```bash
+        mkdir /var/log/gunicorn 
+        supervisorctl reread
+```
+>* Command to tell supervisor to run the application the background:
+```bash
+        sudo supervisorctl update
+        sudo supervisorctl status
+```
+>* Restart supervisor : 
+```bash
+        sudo supervisorctl reload
+```
+
+> Nginx Configuration
+>* We have to configure nginx to read from the socket file instead of port 8000.
+>* All nginx configuration files are in the following director:
+>* - sites-available
+>* - Sites-enabled
+>* Path to these directories : cd /etc/nginx/sites-available
+>* Create a django.conf file here.
+```bash
+   server {
+   listen 80;
+   server_name public_ip_address
+
+   location / {
+       include proxy_params;
+       proxy_pass http://unix:/home/ubuntu/FuntooNoteApp/app.sock;
+
+   }
+   
+}
+
+```
+
+>* Test the configuration by using -t flag :
+ ```
+        sudo nginx -t
+ ```
+>* Enable this configuration : 
+```
+        sudo ln django.conf /etc/nginx/sites-enabled
+```
+>* - This command creates a hard link between sites-available and sites-enabled.
+>* Restart nginx : 
+```     
+        sudo service nginx restart
+```
+>* If this error occurs - nginx: [emerg] could not build server_names_hash, you should increase server_names_hash_bucket_size: 64
+Then add this to /etc/nginx/nginx.conf - server_names_hash_bucket_size 64;
+>* Reload nginx : 
+```
+        sudo service nginx restart
+```
+>* Check status of nginx :
+ ```
+        sudo systemctl status nginx 
+ ```
+
+> **Static files serving**
+>* Nginx should serve the static files instead of python. 
+>* We have to configure the django.conf file for this also. 
+```bash
+   server {
+   listen 80;
+   server_name public_ip_address
+
+   location / {
+       include proxy_params;
+       proxy_pass http://unix:/home/ubuntu/FuntooNoteApp/app.sock;
+
+   }
+   location /media/ {
+        autoindex on;
+        alias /home/ubuntu/FuntooNoteApp/media;
+        }
+}
+
+```
+>* Then reload nginx server and the static files will be served by nginx.
+
+<br>
+
+> Database Connection
+>* Choose RDS from amazon services. 
+>* Choose the required database and create a database instance after providing the necessary information.
+>* Edit the database connection configuration in settings.py file in the project.
+>* Provide the AWS database name and password there and also change the host name with host name provided in AWS database instance.
+>* Migrate the changes in the server.
+>* Restart gunicorn and nginx both and check the server.
+>* Create a new server with AWS host and credentials on PgAdmin or install psql client on Project instance and create database
+
+<br>
+
+> Using a .env File to Store Our Environment Variables
+>* Create a file called .env in the project root.
+>* First we add .env to our .gitignore—this file is going to be used for secrets, and we don’t ever want them ending up on GitHub.
+>* Use the django-decouple package for this.
+>* Command to install : 
+``` 
+        pip install django-decouple
+```
+>* Use config() to access the env variable from the .env file.
+>* Reference : https://pypi.org/project/python-decouple
+
+<br>
+
+> Redis Installation
+>* Commands to install and configure redis:
+```
+        sudo apt update
+        sudo apt install redis-server
+```
+>* Open this file
+```
+        sudo nano /etc/redis/redis.conf
+```
+>* * Inside the file, find the supervised directive. This directive allows you to declare an init system to manage Redis as a service, providing you with more control over its operation. The supervised directive is set to no by default. Since you are running Ubuntu, which uses the systemd init system, change this to systemd
+>* Restart redis:
+```
+        sudo systemctl restart redis.service
+```
+>* Testing redis: 
+```
+        sudo systemctl status redis
+
+```
+>* Reference:
+>* * https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04
+
+<br>
+<br>
+
+# Jenkins Installation and configuration
+> Jenkins is an open-source automation server that offers an easy way to set up a continuous integration and continuous delivery (CI/CD) pipeline.
+> Continuous integration (CI) is a DevOps practice in which team members regularly commit their code changes to the version control repository, after which automated builds and tests are run. Continuous delivery (CD) is a series of practices where code changes are automatically built, tested and deployed to production.
+
+> Installing Jenkins 
+> Jenkins needs java 8 to be installed on the system
+>* Installing Java
+```
+            sudo apt update
+            sudo apt install openjdk-8-jdk
+```
+>*  Add the Jenkins Debian repository.
+>* - Import the GPG keys of the Jenkins repository using the following wget command:
+```
+wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+```
+>* - Next, add the Jenkins repository to the system with
+```
+sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+```
+>* Install Jenkins
+>* - Once the Jenkins repository is enabled, update the apt package list and install the latest version of Jenkins by typing:
+```
+        sudo apt update
+        sudo apt install jenkins
+```
+>* - Jenkins service will automatically start after the installation process is complete. You can verify it by printing the service status:
+```
+        systemctl status jenkins
+```
+>* - You should see something similar to this
+```
+Output:
+
+● jenkins.service - LSB: Start Jenkins at boot time
+Loaded: loaded (/etc/init.d/jenkins; generated)
+Active: active (exited) since Wed 2018-08-22 13:03:08 PDT; 2min 16s ago
+    Docs: man:systemd-sysv-generator(8)
+    Tasks: 0 (limit: 2319)
+CGroup: /system.slice/jenkins.service
+```
+>* Adjusting Firewall
+>* * If you are installing Jenkins on a remote Ubuntu server that is protected by a firewall you’ll need to open port 8080. Assuming you are using UFW to manage your firewall, you can open the port with the following command:
+```
+        sudo ufw allow 8080
+```
+>* - Verify the change with:
+```
+        sudo ufw status
+```
+```
+Output:
+
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere
+8080                       ALLOW       Anywhere
+OpenSSH (v6)               ALLOW       Anywhere (v6)
+8080 (v6)                  ALLOW       Anywhere (v6)
+```
+
+> To set up your new Jenkins installation, open your browser, type your domain or IP address followed by port 8080, http://your_ip_or_domain:8080
+>* During the installation, the Jenkins installer creates an initial 32-character long alphanumeric password. Use the following command to print the password on your terminal:
+```
+    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+```
+```
+Output: 
+
+2115173b548f4e99a203ee99a8732a32
+```
+
+>* Copy the password from your terminal, paste it into the Administrator password field and click Continue.
+>* Then follow the suggetions given by the server
+>* Now Copy the .pem file to jenkins server and configure the jenkins
+>* Now Build and changes will be reflected on the instance 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<br>
+
 ## **Contribution**
 > When contributing to this repository, please first discuss the change you wish to make via issue, email, or any other method with the owners(**[Birajit Nath](birajit95@gmail.com)**) of this repository before making a change
 ## **Author**
